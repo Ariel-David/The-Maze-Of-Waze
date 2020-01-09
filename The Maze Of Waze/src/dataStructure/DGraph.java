@@ -19,13 +19,19 @@ import java.util.Map;
 import elements.Edge;
 import elements.Node;
 import elements.edge_data;
+import elements.fruit;
 import elements.node_data;
+import elements.robot;
 
 
 
 public class DGraph implements graph, Serializable{
 	public Map<Integer, node_data> graph = new HashMap<Integer,node_data>();
+	public Map<Integer, robot> robots = new HashMap<Integer,robot>();
+	public Map<Integer, fruit> fruits = new HashMap<Integer,fruit>();
+	public int countFruits = 0;
 	public int countNode = 0;
+	public int countRobots = 0;
 	public int countEdge = 0;
 	public int ModeCount = 0;
 
@@ -54,7 +60,19 @@ public class DGraph implements graph, Serializable{
 		countNode++;
 		ModeCount++;
 	}
-
+	
+	public void addRobot(robot r) {
+		robots.put(r.getId(),r); 
+		countRobots++;
+		ModeCount++;
+	}
+	
+	public void addFruit(fruit f) {
+		fruits.put(f.getType(),f); 
+		countFruits++;
+		ModeCount++;
+	}
+	
 	@Override
 	public void connect(int src, int dest, double w) {
 		if(((Node)graph.get(src)).edges.containsKey(dest)) {

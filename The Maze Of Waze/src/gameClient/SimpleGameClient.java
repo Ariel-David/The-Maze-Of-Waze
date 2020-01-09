@@ -9,8 +9,10 @@ import org.json.JSONObject;
 
 import Server.Game_Server;
 import Server.game_service;
+import algorithms.Graph_Algo;
 import dataStructure.graph;
-import elements.robots;
+import elements.robot;
+import gui.Graph_GUI;
 import oop_dataStructure.OOP_DGraph;
 import oop_dataStructure.oop_edge_data;
 import oop_dataStructure.oop_graph;
@@ -55,11 +57,6 @@ public class SimpleGameClient {
 			for(int a = 0;a<rs;a++) {
 				game.addRobot(src_node+a);
 			}
-			System.out.println("-----------------------------------");
-			System.out.println(game.getRobots().toString());
-			MyGameGUI t = new MyGameGUI(game);
-			System.out.println(t);
-			
 		}
 		catch (JSONException e) {e.printStackTrace();}
 		//		game.startGame();

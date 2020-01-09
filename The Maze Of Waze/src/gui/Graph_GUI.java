@@ -28,7 +28,7 @@ import utils.Range;
 import utils.StdDraw;
 
 public class Graph_GUI implements Serializable{
-	private graph graph;
+	private DGraph graph;
 	private Graph_Algo algoGraph;
 
 	/**
@@ -44,7 +44,7 @@ public class Graph_GUI implements Serializable{
 		return algoGraph;
 	}
 
-	public graph getGraph(){
+	public DGraph getGraph(){
 		return graph;
 	}
 
@@ -53,7 +53,7 @@ public class Graph_GUI implements Serializable{
 	 * @param g - the given graph.
 	 */
 	public Graph_GUI(graph g){
-		this.graph = g;
+		this.graph = (DGraph) g;
 		algoGraph = new Graph_Algo();
 		algoGraph.init(this.graph);
 		StdDraw.setGui(this);
@@ -63,18 +63,18 @@ public class Graph_GUI implements Serializable{
 	 * Initialize the Graph_GUI from given graph.
 	 * @param gra - the given graph.
 	 */
-	public void init(graph gra) {
+	public void init(DGraph gra) {
 		this.graph = gra;
 		this.algoGraph.graph = gra;
 	}
 
 	/**
-	 * Initialize the Graph from a string.
+	 * Initialise the Graph from a string.
 	 * @param name - the given string, represent a saved graph.
 	 */
 	public void init(String name) {
 		this.algoGraph.init(name);
-		this.graph = algoGraph.graph;
+		this.graph = (DGraph) algoGraph.graph;
 		drawGraph();
 	}
 
@@ -89,7 +89,11 @@ public class Graph_GUI implements Serializable{
 		drawDirection();
 		drawEdgesWeight();
 	}
-
+	private double scale(double data, double r_min, double r_max, double t_min, double t_max){	
+		double res = ((data - r_min) / (r_max-r_min)) * (t_max - t_min) + t_min;
+		return res;
+	}
+	
 	public void setScale() {
 		int x_min = 0;
 		int x_max = 0;
@@ -112,7 +116,7 @@ public class Graph_GUI implements Serializable{
 				y_max = (int) currentNode.getLocation().y();
 			}
 		}
-		StdDraw.setCanvasSize(Math.abs(x_min+x_max) +300 , Math.abs(y_min+y_max)+300);
+		StdDraw.setCanvasSize(Math.abs(x_min+x_max) +500 , Math.abs(y_min+y_max)+500);
 		StdDraw.setXscale(x_min-10,x_max+10);
 		StdDraw.setYscale(y_min-10,y_max+10);
 	}

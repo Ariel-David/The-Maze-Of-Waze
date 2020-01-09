@@ -1,61 +1,102 @@
 package gameClient;
 
-import java.util.ArrayList;
-import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import Server.Game_Server;
 import Server.game_service;
+
 import dataStructure.DGraph;
-import dataStructure.graph;
+
 import elements.Node;
-import elements.fruits;
-import elements.robots;
+import elements.fruit;
+import elements.robot;
+import gui.Graph_GUI;
+import oop_dataStructure.OOP_DGraph;
 import utils.Point3D;
 
 public class MyGameGUI {
-	graph g = new DGraph();
-	public List<robots> robotList = new ArrayList<robots>();
-	public List<fruits> fruitList = new ArrayList<fruits>();
+	public static Graph_GUI gui = new Graph_GUI();
+	public DGraph dg = new DGraph();
+	
+	public static void main(String[] a) {
+		initGraph();
+	}
+	public static void initGraph() {
+		int scenario_num = 20;
+		game_service game = Game_Server.getServer(scenario_num); // you have [0,23] games
+		String g = game.getGraph();
+		String fruitList = game.getFruits().toString();
+		OOP_DGraph gg = new OOP_DGraph();
+		gg.init(g);
+		JSONObject line1;
+		JSONObject line;
+		String info = game.toString();
 
-	public MyGameGUI(game_service game) {
-		
-		/*Initialise robots from the string */
-		robotsFromString(game.getRobots());
-		
-		/*Initialise fruits from the string */
-		furitsFromString(game.getFruits());
-		
-	}
-	public void robotsFromString(List<String> list) {
-		for(int i=0; i<list.size(); i++) {
-			robots r = new robots();
-			String s = list.get(i);
-			String [] s1 = s.split(":");
-			r.src = Character.getNumericValue(s1[4].charAt(0));
-			String [] pos = s1[7].split(",");
-			String [] id = s1[2].split(",");
-			String [] dest = s1[5].split(",");
-			String [] speed = s1[6].split(",");
-			String [] value = s1[3].split(",");
-			r.pos = new Point3D(Float.parseFloat(pos[0].replace('"', ' ')),Float.parseFloat(pos[1]), Float.parseFloat(pos[2].substring(0, 2)));
-			r.id = Integer.parseInt(id[0]);
-			r.dest = Integer.parseInt(dest[0]);
-			r.speed = Double.parseDouble((speed[0]));
-			r.value = Double.parseDouble((value[0]));
-			robotList.add(r);
+		try {
+			int src_node = 0; 
+			line = new JSONObject(info);
+			JSONObject ttt = line.getJSONObject("GameServer");
+			int rs = ttt.getInt("robots");
+			for(int a = 0;a<rs;a++) {
+				game.addRobot(src_node+a);
+			}
+			String robotList = game.getRobots().toString();
+			/*Initialise the nodes*/
+			line1 = new JSONObject(g);
+			JSONArray nodes = line1.getJSONArray("Nodes");
+			JSONArray edges = line1.getJSONArray("Edges");
+			for(int i=0; i<nodes.length(); i++) {
+				JSONObject current = nodes.getJSONObject(i);
+				int key = current.getInt("id");
+				Object pos = current.get("pos");
+				Point3D p = new Point3D(pos.toString());
+				Node n = new Node(key, p);
+				gui.getGraph().addNode(n);
+			}
+			/*Initialise the edges*/
+			for(int i=0; i<edges.length(); i++) {
+				JSONObject current = edges.getJSONObject(i);
+				int src = current.getInt("src");
+				int dest = current.getInt("dest");
+				double w = current.getDouble("w");
+				gui.getGraph().connect(src, dest, w);
+			}
+			
+			/*Initialise the robots*/
+			JSONArray r = new JSONArray(robotList);
+			for(int i=0; i<r.length(); i++) {
+				JSONObject current = r.getJSONObject(i);
+				JSONObject current2 = current.getJSONObject("Robot");
+				int id = current2.getInt("id");
+				double value = current2.getDouble("value");
+				int src = current2.getInt("src");
+				int dest = current2.getInt("dest");
+				double speed = current2.getDouble("speed");
+				Object pos = current2.get("pos");
+				Point3D p = new Point3D(pos.toString());
+				robot ro = new robot(id, src, dest, speed, value, p);
+				gui.getGraph().addRobot(ro);
+			}
+			
+			/*Initialise the fruits*/
+			JSONArray f = new JSONArray(fruitList);
+			for(int i=0; i<f.length(); i++) {
+				JSONObject current = f.getJSONObject(i);
+				JSONObject current2 = current.getJSONObject("Fruit");
+				int type = current2.getInt("type");
+				double value = current2.getDouble("value");
+				Object pos = current2.get("pos");
+				Point3D p = new Point3D(pos.toString());
+				fruit fu = new fruit(type, value, p);
+				gui.getGraph().addFruit(fu);
+			}
+			gui.drawGraph();
+			
 		}
-	}
-	public void furitsFromString(List<String> list) {
-		for(int i=0; i<list.size(); i++) {
-			fruits f = new fruits();
-			String s = list.get(i);
-			String [] s1 = s.split(":");
-			String [] value = s1[2].split(",");
-			String [] type = s1[3].split(",");
-			f.value = Double.parseDouble((value[0]));
-			String [] pos = s1[4].split(",");
-			f.pos = new Point3D(Float.parseFloat(pos[0].replace('"', ' ')),Float.parseFloat(pos[1]), Float.parseFloat(pos[2].substring(0, 2)));
-			f.type = Integer.parseInt(type[0]);
-			fruitList.add(f);
+		catch (Exception e) {
+			// TODO: handle exception
 		}
 	}
 }
