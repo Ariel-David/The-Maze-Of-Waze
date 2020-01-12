@@ -1,14 +1,10 @@
 package gameClient;
 
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import Server.Game_Server;
 import Server.game_service;
-
 import dataStructure.DGraph;
-
 import elements.Node;
 import elements.fruit;
 import elements.robot;
@@ -28,12 +24,10 @@ public class MyGameGUI {
 		game_service game = Game_Server.getServer(scenario_num); // you have [0,23] games
 		String g = game.getGraph();
 		String fruitList = game.getFruits().toString();
-		OOP_DGraph gg = new OOP_DGraph();
-		gg.init(g);
 		JSONObject line1;
 		JSONObject line;
 		String info = game.toString();
-
+		
 		try {
 			int src_node = 0; 
 			line = new JSONObject(info);

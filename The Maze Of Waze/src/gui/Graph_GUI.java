@@ -2,29 +2,13 @@ package gui;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Menu;
-import java.awt.MenuBar;
-import java.awt.MenuItem;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.io.Serializable;
 import java.util.Iterator;
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.KeyStroke;
-
 import algorithms.Graph_Algo;
-import algorithms.graph_algorithms;
 import dataStructure.DGraph;
-import dataStructure.graph;
-import elements.Edge;
 import elements.edge_data;
+import dataStructure.graph;
 import elements.node_data;
-import utils.Range;
 import utils.StdDraw;
 
 public class Graph_GUI implements Serializable{
@@ -63,13 +47,13 @@ public class Graph_GUI implements Serializable{
 	 * Initialize the Graph_GUI from given graph.
 	 * @param gra - the given graph.
 	 */
-	public void init(DGraph gra) {
-		this.graph = gra;
+	public void init(graph gra) {
+		this.graph = (DGraph) gra;
 		this.algoGraph.graph = gra;
 	}
 
 	/**
-	 * Initialise the Graph from a string.
+	 * Initialize the Graph from a string.
 	 * @param name - the given string, represent a saved graph.
 	 */
 	public void init(String name) {
@@ -87,60 +71,85 @@ public class Graph_GUI implements Serializable{
 		drawVertex();
 		printKey();
 		drawDirection();
-		drawEdgesWeight();
-	}
-	private double scale(double data, double r_min, double r_max, double t_min, double t_max){	
-		double res = ((data - r_min) / (r_max-r_min)) * (t_max - t_min) + t_min;
-		return res;
+		//drawEdgesWeight();
 	}
 	
-	public void setScale() {
-		int x_min = 0;
-		int x_max = 0;
-		int y_min = 0;
-		int y_max = 0;
-
+	public double getXmin() {
+		double x_min = Double.MAX_VALUE;
 		Iterator<node_data> iter = this.graph.getV().iterator();
 		while(iter.hasNext()) {
 			node_data currentNode = iter.next();
 			if(currentNode.getLocation().x() < x_min) {
-				x_min = (int) currentNode.getLocation().x();
-			}
-			if(currentNode.getLocation().x() > x_max) {
-				x_max = (int) currentNode.getLocation().x();
-			}
-			if(currentNode.getLocation().y() < y_min) {
-				y_min = (int) currentNode.getLocation().y();
-			}
-			if(currentNode.getLocation().y() > y_max) {
-				y_max = (int) currentNode.getLocation().y();
+				x_min = currentNode.getLocation().x();
 			}
 		}
-		StdDraw.setCanvasSize(Math.abs(x_min+x_max) +500 , Math.abs(y_min+y_max)+500);
-		StdDraw.setXscale(x_min-10,x_max+10);
-		StdDraw.setYscale(y_min-10,y_max+10);
+		return x_min;
+	}
+	public double getXmax() {
+		double x_max = Double.MIN_VALUE;
+		Iterator<node_data> iter = this.graph.getV().iterator();
+		while(iter.hasNext()) {
+			node_data currentNode = iter.next();
+			if(currentNode.getLocation().x() > x_max) {
+				x_max = currentNode.getLocation().x();
+			}
+		}
+		return x_max;
+	}
+
+	public double getYmin() {
+		double y_min = Double.MAX_VALUE;
+		Iterator<node_data> iter = this.graph.getV().iterator();
+		while(iter.hasNext()) {
+			node_data currentNode = iter.next();
+			if(currentNode.getLocation().y() < y_min) {
+				y_min =  currentNode.getLocation().y();
+			}
+		}
+		return y_min;
+	}
+
+	public double getYmax() {
+		double y_max = Double.MIN_VALUE;
+		Iterator<node_data> iter = this.graph.getV().iterator();
+		while(iter.hasNext()) {
+			node_data currentNode = iter.next();
+			if(currentNode.getLocation().y() > y_max) {
+				y_max = currentNode.getLocation().y();
+			}
+		}
+		return y_max;
+	}
+	
+	public void setScale() {
+		StdDraw.setCanvasSize(1250 , 650); //(int)Math.abs(getXmin()+getXmax())+ // (int) Math.abs(getYmin()+getYmax())+
+		StdDraw.setXscale(getXmin()-0.001,getXmax()+0.001);
+		StdDraw.setYscale(getYmin()-0.001,getYmax()+0.001);
 	}
 
 	public void drawVertex() {
-		StdDraw.setPenColor(Color.BLACK);
+		StdDraw.setPenColor(Color.black);
 		StdDraw.setPenRadius(0.017);
 		Iterator<node_data> iter = this.graph.getV().iterator();
 		while(iter.hasNext()) {
 			node_data currentNode = iter.next();
-			StdDraw.point(currentNode.getLocation().x(), currentNode.getLocation().y());
+			double x = currentNode.getLocation().x();
+			double y = currentNode.getLocation().y();
+			StdDraw.point(x, y);
 		}
 	}
 
 	public void printKey() {
 		StdDraw.setPenColor(Color.red);
-		StdDraw.setPenRadius(0.8);
+		StdDraw.setPenRadius(0.30);
 		Iterator<node_data> iter = this.graph.getV().iterator();
 		while(iter.hasNext()) {
-			StdDraw.setFont(new Font("Ariel", Font.BOLD, 19));
+			StdDraw.setFont(new Font("Ariel", Font.BOLD, 18));
 			node_data currentNode = iter.next();
-			StdDraw.text(currentNode.getLocation().x()-1, currentNode.getLocation().y()-5,""+currentNode.getKey());;
+			StdDraw.text(currentNode.getLocation().x()-0.00050, currentNode.getLocation().y(),""+currentNode.getKey());;
 		}
 	}
+	
 	public void drawEdges() {
 		StdDraw.setPenColor(Color.orange);
 		StdDraw.setPenRadius(0.003);
@@ -154,6 +163,7 @@ public class Graph_GUI implements Serializable{
 			}
 		}
 	}
+	
 	public void drawDirection() {
 		Iterator<node_data> iterNodes = this.graph.getV().iterator();
 		while(iterNodes.hasNext()){
@@ -161,12 +171,13 @@ public class Graph_GUI implements Serializable{
 			Iterator<edge_data> iterEdges = this.graph.getE(currentNode.getKey()).iterator();
 			while(iterEdges.hasNext()){
 				edge_data currentEdge = iterEdges.next();
-				StdDraw.setPenRadius(0.020);
+				StdDraw.setPenRadius(0.010);
 				StdDraw.setPenColor(StdDraw.GREEN);
 				StdDraw.point((currentNode.getLocation().x()+graph.getNode(currentEdge.getDest()).getLocation().x()*3)/4, (currentNode.getLocation().y()+graph.getNode(currentEdge.getDest()).getLocation().y()*3)/4);
 			}
 		}
 	}
+	
 	public void drawEdgesWeight() {
 		StdDraw.setFont(new Font("Ariel", 2, 14));
 		StdDraw.setPenColor(Color.BLUE.darker());
@@ -182,6 +193,13 @@ public class Graph_GUI implements Serializable{
 			}
 		}
 	}
+	
+	private double scale(double data, double r_min, double r_max, double t_min, double t_max){	
+		double res = ((data - r_min) / (r_max-r_min)) * (t_max - t_min) + t_min;
+		return res;
+	}
 }
+
+
 
 

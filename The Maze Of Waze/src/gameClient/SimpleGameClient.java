@@ -9,10 +9,6 @@ import org.json.JSONObject;
 
 import Server.Game_Server;
 import Server.game_service;
-import algorithms.Graph_Algo;
-import dataStructure.graph;
-import elements.robot;
-import gui.Graph_GUI;
 import oop_dataStructure.OOP_DGraph;
 import oop_dataStructure.oop_edge_data;
 import oop_dataStructure.oop_graph;
@@ -37,7 +33,7 @@ public class SimpleGameClient {
 	public static void main(String[] a) {
 		test1();}
 	public static void test1() {
-		int scenario_num = 20;
+		int scenario_num = 2;
 		game_service game = Game_Server.getServer(scenario_num); // you have [0,23] games
 		String g = game.getGraph();
 		OOP_DGraph gg = new OOP_DGraph();
@@ -59,15 +55,15 @@ public class SimpleGameClient {
 			}
 		}
 		catch (JSONException e) {e.printStackTrace();}
-		//		game.startGame();
-		//		// should be a Thread!!!
-		//		while(game.isRunning()) {
-		//			moveRobots(game, gg);
-		//		}
-		//		String results = game.toString();
-		//		System.out.println("Game Over: "+results);
-
+		game.startGame();
+		// should be a Thread!!!
+		while(game.isRunning()) {
+			moveRobots(game, gg);
+		}
+		String results = game.toString();
+		System.out.println("Game Over: "+results);
 	}
+	
 	/** 
 	 * Moves each of the robots along the edge, 
 	 * in case the robot is on a node the next destination (next edge) is chosen (randomly).
@@ -87,7 +83,7 @@ public class SimpleGameClient {
 					int rid = ttt.getInt("id");
 					int src = ttt.getInt("src");
 					int dest = ttt.getInt("dest");
-
+				
 					if(dest==-1) {	
 						dest = nextNode(gg, src);
 						game.chooseNextEdge(rid, dest);
