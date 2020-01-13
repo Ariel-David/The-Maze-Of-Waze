@@ -6,14 +6,15 @@ public class robot {
 	public Point3D pos;
 	public int id;
 	public int dest;
-	public double speed;
+	public int speed;
 	public double value;
 	
-	public robot(int id, int src, int dest, double speed, double value, Point3D pos) {
+	public robot(int id, int src, int dest, int speed, double value, Point3D pos) {
 		this.id = id;
 		this.src = src;
 		this.value = value;
 		this.speed = speed;
+		this.pos = pos;
 	}
 	
 	public robot(robot r) {
@@ -60,7 +61,7 @@ public class robot {
 		return speed;
 	}
 
-	public void setSpeed(double speed) {
+	public void setSpeed(int speed) {
 		this.speed = speed;
 	}
 

@@ -7,8 +7,10 @@ import java.util.Iterator;
 import algorithms.Graph_Algo;
 import dataStructure.DGraph;
 import elements.edge_data;
+import elements.fruit;
 import dataStructure.graph;
 import elements.node_data;
+import elements.robot;
 import utils.StdDraw;
 
 public class Graph_GUI implements Serializable{
@@ -45,11 +47,11 @@ public class Graph_GUI implements Serializable{
 
 	/**
 	 * Initialize the Graph_GUI from given graph.
-	 * @param gra - the given graph.
+	 * @param g - the given graph.
 	 */
-	public void init(graph gra) {
-		this.graph = (DGraph) gra;
-		this.algoGraph.graph = gra;
+	public void init(graph g) {
+		this.graph = (DGraph) g;
+		this.algoGraph.graph = g;
 	}
 
 	/**
@@ -71,9 +73,11 @@ public class Graph_GUI implements Serializable{
 		drawVertex();
 		printKey();
 		drawDirection();
+		drawRobots();
+		drawFruits();
 		//drawEdgesWeight();
 	}
-	
+
 	public double getXmin() {
 		double x_min = Double.MAX_VALUE;
 		Iterator<node_data> iter = this.graph.getV().iterator();
@@ -120,9 +124,9 @@ public class Graph_GUI implements Serializable{
 		}
 		return y_max;
 	}
-	
+
 	public void setScale() {
-		StdDraw.setCanvasSize(1250 , 650); //(int)Math.abs(getXmin()+getXmax())+ // (int) Math.abs(getYmin()+getYmax())+
+		StdDraw.setCanvasSize(1250 , 650); 
 		StdDraw.setXscale(getXmin()-0.001,getXmax()+0.001);
 		StdDraw.setYscale(getYmin()-0.001,getYmax()+0.001);
 	}
@@ -140,7 +144,7 @@ public class Graph_GUI implements Serializable{
 	}
 
 	public void printKey() {
-		StdDraw.setPenColor(Color.red);
+		StdDraw.setPenColor(Color.black);
 		StdDraw.setPenRadius(0.30);
 		Iterator<node_data> iter = this.graph.getV().iterator();
 		while(iter.hasNext()) {
@@ -149,7 +153,7 @@ public class Graph_GUI implements Serializable{
 			StdDraw.text(currentNode.getLocation().x()-0.00050, currentNode.getLocation().y(),""+currentNode.getKey());;
 		}
 	}
-	
+
 	public void drawEdges() {
 		StdDraw.setPenColor(Color.orange);
 		StdDraw.setPenRadius(0.003);
@@ -163,7 +167,7 @@ public class Graph_GUI implements Serializable{
 			}
 		}
 	}
-	
+
 	public void drawDirection() {
 		Iterator<node_data> iterNodes = this.graph.getV().iterator();
 		while(iterNodes.hasNext()){
@@ -177,7 +181,7 @@ public class Graph_GUI implements Serializable{
 			}
 		}
 	}
-	
+
 	public void drawEdgesWeight() {
 		StdDraw.setFont(new Font("Ariel", 2, 14));
 		StdDraw.setPenColor(Color.BLUE.darker());
@@ -193,10 +197,33 @@ public class Graph_GUI implements Serializable{
 			}
 		}
 	}
-	
-	private double scale(double data, double r_min, double r_max, double t_min, double t_max){	
-		double res = ((data - r_min) / (r_max-r_min)) * (t_max - t_min) + t_min;
-		return res;
+
+	public void drawRobots() {
+		Iterator<robot> iter = this.graph.robots.iterator();
+		while(iter.hasNext()) {
+			robot currentNode = iter.next();
+			double x = currentNode.getPos().x();
+			double y = currentNode.getPos().y();
+			StdDraw.picture(x, y, "robot.png", 0.001, 0.001);
+		}
+	}
+
+	public void drawFruits() {
+		Iterator<fruit> iter = this.graph.fruits.iterator();
+		while(iter.hasNext()) {
+			fruit currentNode = iter.next();
+			double x = currentNode.getPos().x();
+			double y = currentNode.getPos().y();
+			if(currentNode.type  == 1) {
+				StdDraw.picture(x, y, "apple.png", 0.001, 0.001);
+			}
+			else if (currentNode.type == -1){
+				StdDraw.picture(x, y, "banana.png", 0.001, 0.001);	
+			}
+			else {
+				throw new RuntimeException("valid type of fruit");
+			}
+		}
 	}
 }
 

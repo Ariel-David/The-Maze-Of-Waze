@@ -82,11 +82,15 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
+import Server.Game_Server;
+import Server.game_service;
 import algorithms.Graph_Algo;
 import algorithms.graph_algorithms;
+import dataStructure.DGraph;
 import dataStructure.graph;
 import elements.Node;
 import elements.node_data;
+import gameClient.MyGameGUI;
 import gui.Graph_GUI;
 
 /**
@@ -493,12 +497,16 @@ import gui.Graph_GUI;
  *  @author Kevin Wayne
  */
 public final class StdDraw implements ActionListener, MouseListener, MouseMotionListener, KeyListener {
-	public static Graph_GUI graphGui;
+	public static Graph_GUI graphGui = new Graph_GUI();
+	public static MyGameGUI mygraphGui = new MyGameGUI();
+
 
 	public static void setGui(Graph_GUI g) {
 		graphGui = g;			
 	}
-
+	public static void setGui(MyGameGUI myg) {
+		mygraphGui = myg;			
+	}
 	/**
 	 *  The color black.
 	 */
@@ -725,62 +733,13 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);            // closes all windows
 		// frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);      // closes only current window
 		frame.setTitle("Standard Draw");
-		frame.setJMenuBar(createMenuBar());
 		frame.pack();
 		frame.requestFocusInWindow();
 		frame.setVisible(true);
 	}
 
 	// create the menu bar (changed to private)
-	private static JMenuBar createMenuBar() {
-		JMenuBar menuBar = new JMenuBar();
-		JMenu menu1 = new JMenu("File");
-		menuBar.add(menu1);
-		JMenuItem menuItem1 = new JMenuItem(" Save File ");
-		menuItem1.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-		JMenuItem menuItem2 = new JMenuItem(" Load File ");
-		menuItem1.addActionListener(std);
-		menuItem2.addActionListener(std);
-		menu1.add(menuItem1);
-		menu1.add(menuItem2);
-
-		JMenu menu2 = new JMenu("Vertex");
-		menuBar.add(menu2);
-		JMenuItem menuItem3 = new JMenuItem(" Add Vertex ");
-		JMenuItem menuItem4 = new JMenuItem(" Remove Vertex ");
-		menuItem3.addActionListener(std);
-		menuItem4.addActionListener(std);
-		menu2.add(menuItem3);
-		menu2.add(menuItem4);
-
-
-		JMenu menu3 = new JMenu("Edge");
-		menuBar.add(menu3);
-		JMenuItem menuItem5 = new JMenuItem(" Remove Edge ");
-		JMenuItem menuItem6 = new JMenuItem(" Connect ");
-		menu3.add(menuItem5);
-		menu3.add(menuItem6);
-		menuItem5.addActionListener(std);
-		menuItem6.addActionListener(std);
-
-
-		JMenu menu4 = new JMenu("Algorithms");
-		menuBar.add(menu4);
-		JMenuItem menuItem7 = new JMenuItem(" isConnected ");
-		JMenuItem menuItem8 = new JMenuItem(" shortestPathDist ");
-		JMenuItem menuItem9 = new JMenuItem(" shortestPath ");
-		JMenuItem menuItem10 = new JMenuItem(" TSP ");
-		menuItem7.addActionListener(std);
-		menuItem8.addActionListener(std);
-		menuItem9.addActionListener(std);
-		menuItem10.addActionListener(std);
-		menu4.add(menuItem7);
-		menu4.add(menuItem8);
-		menu4.add(menuItem9);
-		menu4.add(menuItem10);
-
-		return menuBar;
-	}
+	
 
 
 	/***************************************************************************
@@ -1713,160 +1672,9 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		switch(e.getActionCommand()) {
-
-		case " Save File ":
-			String fileName =JOptionPane.showInputDialog(null, "File Name:");
-			if(fileName != null) {
-				graphGui.getAlgoGraph().save(fileName);
-			}
-			break;
-
-		case " Load File ":
-			String path = "C:\\Users\\ariel\\git\\Graphs\\Graphs";
-			File folder = new File(path);
-			File[] possibleValues = folder.listFiles();
-			Object file = JOptionPane.showInputDialog(null, "Choose file", "Message",
-					JOptionPane.INFORMATION_MESSAGE, null, possibleValues, possibleValues[0]);
-			if (file!=null)
-				graphGui.init(file.toString());
-			break;
-
-		case " Add Vertex ":
-			try {
-				String key = JOptionPane.showInputDialog(null, "Key: ");
-				String location = JOptionPane.showInputDialog(null, "Location:\n "+"should be of format: x,y,x");
-				Point3D p = new Point3D(location);
-				Node n = new Node(Integer.parseInt(key), p);
-				graphGui.getAlgoGraph().graph.addNode(n);
-				graphGui.drawGraph();
-			}
-			catch (Exception e2) {
-				JOptionPane.showMessageDialog(null, "Please choose valid numbers");		
-			}
-			break;
-
-		case " Remove Vertex ":
-			if(graphGui.getAlgoGraph().graph.getV().isEmpty()) break;
-			try {
-				String key = JOptionPane.showInputDialog(null, "Enter node Key: ");
-				graphGui.getAlgoGraph().graph.removeNode(Integer.parseInt(key));
-				graphGui.drawGraph();
-			}
-			catch (Exception e2) {
-				JOptionPane.showMessageDialog(null, "Please choose valid numbers");		
-			}
-			break;
-
-		case " Remove Edge ":
-			if(graphGui.getAlgoGraph().graph.getV().isEmpty()) break;
-			try {
-				String src = JOptionPane.showInputDialog(null, "Enter sourc: ");
-				String dest = JOptionPane.showInputDialog(null, "Enter destination: ");
-
-				graphGui.getAlgoGraph().graph.removeEdge(Integer.parseInt(src), Integer.parseInt(dest));
-				graphGui.drawGraph();
-			}
-			catch (Exception e2) {
-				JOptionPane.showMessageDialog(null, "Please choose valid numbers");		
-			}
-			break;
-
-		case " Connect ":
-			try {
-				String src = JOptionPane.showInputDialog(null, "Enter sourc: ");
-				String dest = JOptionPane.showInputDialog(null, "Enter destination: ");
-				String w = JOptionPane.showInputDialog(null, "Enter Weight: ");
-				graphGui.getAlgoGraph().graph.connect(Integer.parseInt(src), Integer.parseInt(dest), Double.parseDouble(w));
-				graphGui.drawGraph();
-			}
-			catch (Exception e2) {
-				JOptionPane.showMessageDialog(null, "Please choose valid numbers");		
-			}
-			break;
-
-		case " isConnected ":
-			if(graphGui.getAlgoGraph().graph.nodeSize()==0) break;
-
-			try {
-				if(graphGui.getAlgoGraph().isConnected() == true) {
-					JOptionPane.showMessageDialog(null, "The graph is connected!");		
-				}
-				else {
-					JOptionPane.showMessageDialog(null, "The graph is not connected!");		
-				}
-			}
-			catch (Exception e2) {
-				JOptionPane.showMessageDialog(null, "Please choose valid numbers");		
-			}
-			break;
-
-		case " shortestPathDist ":
-			try {
-				String src = JOptionPane.showInputDialog(null, "Enter sourc: ");
-				String dest = JOptionPane.showInputDialog(null, "Enter destination: ");
-				double ans = graphGui.getAlgoGraph().shortestPathDist(Integer.parseInt(src), Integer.parseInt(dest));
-				JOptionPane.showMessageDialog(null,"The shortest Path Distence is: "+ ans);		
-
-			}
-			catch (Exception e2) {
-				JOptionPane.showMessageDialog(null, "Please choose valid numbers");		
-			}
-			break;
-
-		case " shortestPath ":
-			try {
-				String src = JOptionPane.showInputDialog(null, "Enter sourc: ");
-				String dest = JOptionPane.showInputDialog(null, "Enter destination: ");
-				List<node_data> ans = graphGui.getAlgoGraph().shortestPath(Integer.parseInt(src), Integer.parseInt(dest));
-				String s = "";
-				for (node_data n: ans) {
-					s = s + (((Node) n).keytoString())+"->";
-				}
-				JOptionPane.showMessageDialog(null,"The shortest Path is: "+s);		
-			}
-			catch (Exception e2) {
-				JOptionPane.showMessageDialog(null, "Please choose valid numbers");		
-			}
-			break;
-		case " TSP ":
-			try {
-				List<Integer> targets = new ArrayList<>();
-				String size = JOptionPane.showInputDialog(null, "Enter the number of vertex: ");
-				String[] vertex = new String[graphGui.getAlgoGraph().graph.nodeSize()];
-				int i = 0;
-				for (node_data n : graphGui.getAlgoGraph().graph.getV()) {
-					vertex[i] = n.getKey() + "";
-					i++;
-				}
-
-				for(int j=0; j<Integer.parseInt(size); j++) {
-					Object currentVertex = JOptionPane.showInputDialog(null, "Choose a vertex", "Message",
-							JOptionPane.INFORMATION_MESSAGE, null, vertex, vertex[0]);
-					if(currentVertex == null) {
-						break;
-					}
-					else {
-						targets.add(Integer.parseInt(currentVertex.toString()));
-					}
-				}
-				List<node_data> TSP =  (ArrayList<node_data>) graphGui.getAlgoGraph().TSP(targets);
-				List<String> tspToString = new ArrayList<String>();
-				if(TSP!=null) {
-					for (int k = 0; k<TSP.size(); k++) {
-						tspToString.add(""+TSP.get(k).getKey()+"->");
-					}
-					JOptionPane.showMessageDialog(null, "TSP: " + tspToString.subList(0, tspToString.size()));
-				}
-				else {
-					JOptionPane.showMessageDialog(null, "Enter numbers!");
-				}
-			}
-			catch (Exception e2) {
-				JOptionPane.showMessageDialog(null, "Please choose valid numbers");		
-			}
-		}
+	
 	}
+
 
 
 	/***************************************************************************

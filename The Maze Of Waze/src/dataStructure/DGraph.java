@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -16,19 +17,26 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import Server.Game_Server;
+import Server.game_service;
 import elements.Edge;
 import elements.Node;
 import elements.edge_data;
 import elements.fruit;
 import elements.node_data;
 import elements.robot;
+import gui.Graph_GUI;
+import utils.Point3D;
 
 
 
 public class DGraph implements graph, Serializable{
 	public Map<Integer, node_data> graph = new HashMap<Integer,node_data>();
-	public Map<Integer, robot> robots = new HashMap<Integer,robot>();
-	public Map<Integer, fruit> fruits = new HashMap<Integer,fruit>();
+	public ArrayList<robot> robots = new ArrayList<robot>();
+	public ArrayList<fruit> fruits = new ArrayList<fruit>();
 	public int countFruits = 0;
 	public int countNode = 0;
 	public int countRobots = 0;
@@ -60,19 +68,19 @@ public class DGraph implements graph, Serializable{
 		countNode++;
 		ModeCount++;
 	}
-	
+
 	public void addRobot(robot r) {
-		robots.put(r.getId(),r); 
+		robots.add(r);
 		countRobots++;
 		ModeCount++;
 	}
-	
+
 	public void addFruit(fruit f) {
-		fruits.put(f.getType(),f); 
+		fruits.add(f);
 		countFruits++;
 		ModeCount++;
 	}
-	
+
 	@Override
 	public void connect(int src, int dest, double w) {
 		if(((Node)graph.get(src)).edges.containsKey(dest)) {
@@ -144,6 +152,77 @@ public class DGraph implements graph, Serializable{
 	@Override
 	public int getMC() {
 		return ModeCount;
+	}
+	
+	public void initGraph(game_service game) { 
+		String g = game.getGraph();
+		String fruitList = game.getFruits().toString();
+		JSONObject line1;
+		JSONObject line;
+		String info = game.toString();
+
+		try {
+			int src_node = 0; 
+			line = new JSONObject(info);
+			JSONObject ttt = line.getJSONObject("GameServer");
+			int rs = ttt.getInt("robots");
+			for(int a = 0;a<rs;a++) {
+				game.addRobot(src_node+a);
+			}
+
+			String robotList = game.getRobots().toString();
+			/*Initialise the nodes*/
+			line1 = new JSONObject(g);
+			JSONArray nodes = line1.getJSONArray("Nodes");
+			JSONArray edges = line1.getJSONArray("Edges");
+			for(int i=0; i<nodes.length(); i++) {
+				JSONObject current = nodes.getJSONObject(i);
+				int key = current.getInt("id");
+				Object pos = current.get("pos");
+				Point3D p = new Point3D(pos.toString());
+				Node n = new Node(key, p);
+				this.addNode(n);
+			}
+			/*Initialise the edges*/
+			for(int i=0; i<edges.length(); i++) {
+				JSONObject current = edges.getJSONObject(i);
+				int src = current.getInt("src");
+				int dest = current.getInt("dest");
+				double w = current.getDouble("w");
+				this.connect(src, dest, w);
+			}
+
+			/*Initialise the robots*/
+			JSONArray r = new JSONArray(robotList);
+			for(int i=0; i<r.length(); i++) {
+				JSONObject current = r.getJSONObject(i);
+				JSONObject current2 = current.getJSONObject("Robot");
+				int id = current2.getInt("id");
+				double value = current2.getDouble("value");
+				int src = current2.getInt("src");
+				int dest = current2.getInt("dest");
+				int speed = current2.getInt("speed");
+				Object pos = current2.get("pos");
+				Point3D p = new Point3D(pos.toString());
+				robot ro = new robot(id, src, dest, speed, value, p);
+				this.addRobot(ro);
+			}
+
+			/*Initialise the fruits*/
+			JSONArray f = new JSONArray(fruitList);
+			for(int i=0; i<f.length(); i++) {
+				JSONObject current = f.getJSONObject(i);
+				JSONObject current2 = current.getJSONObject("Fruit");
+				int type = current2.getInt("type");
+				double value = current2.getDouble("value");
+				Object pos = current2.get("pos");
+				Point3D p = new Point3D(pos.toString());
+				fruit fu = new fruit(type, value, p);
+				this.addFruit(fu);
+			}	
+		}
+		catch (Exception e) {
+		}
 	}
 
 }
