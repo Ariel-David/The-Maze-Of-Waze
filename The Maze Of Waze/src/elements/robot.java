@@ -2,12 +2,12 @@ package elements;
 import utils.Point3D;
 
 public class robot {
-	public int src;
-	public Point3D pos;
-	public int id;
-	public int dest;
-	public int speed;
-	public double value;
+	private int src;
+	private Point3D pos;
+	private int id;
+	private int dest;
+	private int speed;
+	private double value;
 	
 	public robot(int id, int src, int dest, int speed, double value, Point3D pos) {
 		this.id = id;
@@ -25,6 +25,14 @@ public class robot {
 		this.speed = r.speed;
 	}
 	
+	public robot(Point3D p) {
+		this.pos = p;
+		this.id = 0;
+		this.src = 0;
+		this.value = 0;
+		this.speed = 1;
+	}
+
 	public int getSrc() {
 		return src;
 	}

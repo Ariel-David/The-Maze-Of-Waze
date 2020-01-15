@@ -4,8 +4,10 @@ import java.awt.Font;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -13,6 +15,7 @@ import java.util.List;
 
 import javax.swing.JOptionPane;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,6 +24,7 @@ import Server.game_service;
 import algorithms.Graph_Algo;
 import dataStructure.DGraph;
 import dataStructure.graph;
+import elements.Node;
 import elements.edge_data;
 import elements.fruit;
 import elements.node_data;
@@ -33,13 +37,21 @@ import utils.Point3D;
 import utils.StdDraw;
 
 public class MyGameGUI{
+	private int key = -1;
 	private DGraph graph;
 	game_service game;
-	double Epsilon = 0.001;
+	double Epsilon = 0.0001;
 
-	public static void main(String[] args) throws JSONException {
+	public static void main(String[] args) {
+
 		MyGameGUI ggg = new MyGameGUI();
-		ggg.initMyGui();
+		try {
+			ggg.initMyGui();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			throw new RuntimeException(e);
+		}
+
 	}
 	public void paint() {
 		graph.initGraph(game);
@@ -88,7 +100,7 @@ public class MyGameGUI{
 		printKey();
 		drawDirection();
 		drawFruits();
-		//drawEdgesWeight();
+		drawEdgesWeight();
 	}
 
 	public double getXmin() {
@@ -204,9 +216,13 @@ public class MyGameGUI{
 			Iterator<edge_data> iterEdges = this.graph.getE(currentNode.getKey()).iterator();
 			while(iterEdges.hasNext()){
 				edge_data currentEdge = iterEdges.next();
-				StdDraw.setFont(new Font("Ariel", Font.BOLD, 15));
-				StdDraw.setPenColor(Color.black);
-				StdDraw.text((currentNode.getLocation().x()+graph.getNode(currentEdge.getDest()).getLocation().x()*3)/4, (currentNode.getLocation().y()+graph.getNode(currentEdge.getDest()).getLocation().y()*3)/4, ""+ currentEdge.getWeight());
+				StdDraw.setFont(new Font("Ariel", Font.ROMAN_BASELINE, 15));
+				StdDraw.setPenColor(Color.gray);
+				double x1 = (currentNode.getLocation().x()+graph.getNode(currentEdge.getDest()).getLocation().x()*3)/4;
+				double x2 = (currentNode.getLocation().y()+graph.getNode(currentEdge.getDest()).getLocation().y()*3)/4;
+				String weight = String.format("%.2f", currentEdge.getWeight());
+				StdDraw.text(x1, x2, ""+weight);
+
 			}
 		}
 	}
@@ -221,14 +237,14 @@ public class MyGameGUI{
 				StdDraw.picture(x, y, "apple.png", 0.001, 0.001);
 			}
 			else if (currentNode.type == -1){
-				StdDraw.picture(x, y, "banana.png", 0.001, 0.001);	
+				StdDraw.picture(x, y, "banana.png", 0.00070, 0.00070);	
 			}
 			else {
 				throw new RuntimeException("valid type of fruit");
 			}
 		}
 	}
-	public int getRobotNumber(game_service game) throws JSONException {
+	public int getRobotNumber() throws JSONException {
 		String info = game.toString();
 		JSONObject line;
 		line = new JSONObject(info);
@@ -239,48 +255,162 @@ public class MyGameGUI{
 
 	public void initMyGui() throws JSONException {
 		drawGraph();
+		String[] type = new String[2];
+		type[0] = "Manual Game";
+		type[1] = "Auto Game";
+
+		/** choosing the type of the game **/
+		Object gameType = JOptionPane.showInputDialog(null, "Choose a game mode", "Message",
+				JOptionPane.INFORMATION_MESSAGE, null, type, type[0]);
 		String[] levels = new String[24];
 		for(int i=0; i<levels.length; i++) {
 			levels[i] = ""+i;
 		}
 
-		Object currentNum = JOptionPane.showInputDialog(null, "Choose a level", "Message",
-				JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
-		int scenario_num = Integer.parseInt(currentNum.toString());
-		game = Game_Server.getServer(scenario_num);
-		JOptionPane.showMessageDialog(null, "Please put " +getRobotNumber(game)+" robots");
-		paint();
-		int count = 0;
-		int done = 0;
-		while(count != getRobotNumber(game)) {
-			done = drawRobots(count);
-			count = done;
-		}
-	}
-	public int drawRobots(int count) throws JSONException {	
-			if(StdDraw.isMousePressed() == true) {
-				double x = StdDraw.mouseX();
-				double y = StdDraw.mouseY();
-				if(check(x,y) == true) {
-					StdDraw.setPenColor(Color.pink);
-					StdDraw.setPenRadius(0.04);
-					StdDraw.point(x, y);
-					count++;
-				}
-		}
-			return count;
-	}
-
-	public boolean check(double x, double y) {
-		boolean flag = false;
-		Iterator<node_data> iter = graph.getV().iterator();
-		node_data currentNode = iter.next();
-		while(flag == false) {
-			if((x-Epsilon) <= currentNode.getLocation().x() && (x+Epsilon) >= currentNode.getLocation().x()&& (y-Epsilon) <= currentNode.getLocation().y() && (y+Epsilon) >= currentNode.getLocation().y()); {
-				flag = true;
+		/** Manual game **/
+		if(gameType == type[0]) {
+			/** choosing the level **/
+			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
+					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
+			int scenario_num = Integer.parseInt(level.toString());
+			game = Game_Server.getServer(scenario_num);
+			JOptionPane.showMessageDialog(null, "Please put " +getRobotNumber()+" robots");
+			paint();
+			drawRobotManual();
+			game.startGame();
+			while(game.isRunning()) {
+				moveRobots(-1);
+				StdDraw.clear();
+				updateGraph();
+				StdDraw.enableDoubleBuffering();
+				StdDraw.show();
 			}
 		}
-		return flag;
+
+		/** Auto game **/
+		else {
+			/** choosing the level **/	
+			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
+					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
+		}
+
 	}
 
+	public void drawRobotManual() throws JSONException {
+		int i = 0;
+		int num = getRobotNumber();
+		while(i < num) {
+			if(StdDraw.isMousePressed() == true) {
+				StdDraw.isMousePressed = false;
+				for (node_data currentNode : graph.getV()) {
+					if(((StdDraw.mouseX()-Epsilon) <= currentNode.getLocation().x()) && 
+							((StdDraw.mouseX()+Epsilon) >= currentNode.getLocation().x())&& 
+							((StdDraw.mouseY()-Epsilon) <= currentNode.getLocation().y()) &&
+							((StdDraw.mouseY()+Epsilon) >= currentNode.getLocation().y())) {
+						Point3D p = new Point3D(currentNode.getLocation().x(),currentNode.getLocation().y(),0);
+						StdDraw.picture(p.x(), p.y(),"data\\robot.png",0.00070,0.00050);
+						robot r = new robot(i,currentNode.getKey(), -1, 1, 0.0, p);
+						graph.addRobot(r);
+						game.addRobot(currentNode.getKey());
+						i++;
+					}
+				}
+			}
+		}
+	}
+
+	public void moveRobots(int next) throws JSONException {
+		int index = select();
+		System.out.println(StdDraw.isKeyPressed(KeyEvent.VK_0));
+		if (index!=-1) {
+			if(index < graph.robots.size()) {
+				int dest = nextNodeMenual(graph,graph.robots.get(index).getSrc());
+				System.out.println("dest : "+dest);
+				game.chooseNextEdge(graph.robots.get(index).getId(),dest);
+			}
+			else {
+				index = -1;
+			}
+		}
+		game.move();
+	}
+
+	public int select() {
+		if(StdDraw.isKeyPressed(KeyEvent.VK_0)) {
+			System.out.println(StdDraw.isKeyPressed(KeyEvent.VK_0));
+			key=0;
+		}
+		else if(StdDraw.isKeyPressed(KeyEvent.VK_1)) {
+			key=1;
+		}	
+		else if(StdDraw.isKeyPressed(KeyEvent.VK_2)) {
+			key=2;
+		}
+		return key;
+	}
+
+	public void updateGraph() throws JSONException {
+		String fruitList = game.getFruits().toString();
+		String robotList = game.getRobots().toString();
+
+		/*Initialise fruits from json*/
+		graph.fruits.clear();
+		JSONArray f = new JSONArray(fruitList);
+		for(int i=0; i<f.length(); i++) {
+			JSONObject current = f.getJSONObject(i);
+			JSONObject current2 = current.getJSONObject("Fruit");
+			int type = current2.getInt("type");
+			double value = current2.getDouble("value");
+			Object pos = current2.get("pos");
+			Point3D p = new Point3D(pos.toString());
+			fruit fu = new fruit(type, value, p);
+			graph.addFruit(fu);
+		}
+		/*Initialise robots from json*/
+		graph.robots.clear();
+		JSONArray r = new JSONArray(robotList);
+		for(int j=0; j<r.length(); j++) {
+			JSONObject line = r.getJSONObject(j);
+			JSONObject robotline = line.getJSONObject("Robot");
+			int id = robotline.getInt("id");
+			double value1 = robotline.getDouble("value");
+			int src = robotline.getInt("src");
+			int dest = robotline.getInt("dest");
+			int speed = robotline.getInt("speed");
+			Object pos1 = robotline.get("pos");
+			Point3D point = new Point3D(pos1.toString());
+			robot ro = new robot(id, src, dest, speed, value1, point);
+			graph.addRobot(ro);
+			StdDraw.picture(ro.getPos().x(), ro.getPos().y(),"data\\robot.png",0.00070,0.00050);
+		}
+		drawEdges();
+		drawVertex();
+		printKey();
+		drawDirection();
+		drawEdgesWeight();
+		drawFruits();
+	}
+
+	public int nextNodeMenual(DGraph g, int src) throws JSONException {
+		int dest = -1;
+		if(StdDraw.isMousePressed()) {
+			StdDraw.isMousePressed = false;
+			System.out.println("hi");
+			double x = StdDraw.mouseX();
+			double y = StdDraw.mouseY();
+			int i = 0;
+			//while(i < 1) {
+			for (edge_data currentEdge : ((Node)graph.getNode(src)).edges.values()) {
+				if(((x-Epsilon) <= graph.getNode(currentEdge.getDest()).getLocation().x()) && 
+						((x+Epsilon) >= graph.getNode(currentEdge.getDest()).getLocation().x())&& 
+						((y-Epsilon) <= graph.getNode(currentEdge.getDest()).getLocation().y()) &&
+						((y+Epsilon) >= graph.getNode(currentEdge.getDest()).getLocation().y())) {
+					dest = graph.getNode(currentEdge.getDest()).getKey();
+					//i++;
+					//}
+				}
+			}
+		}
+		return dest;
+	}
 }

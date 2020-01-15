@@ -36,6 +36,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.MediaTracker;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 
@@ -499,7 +500,7 @@ import gui.Graph_GUI;
 public final class StdDraw implements ActionListener, MouseListener, MouseMotionListener, KeyListener {
 	public static Graph_GUI graphGui = new Graph_GUI();
 	public static MyGameGUI mygraphGui = new MyGameGUI();
-
+	public static Point3D pointOfMouse;
 
 	public static void setGui(Graph_GUI g) {
 		graphGui = g;			
@@ -647,12 +648,12 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	private static JFrame frame;
 
 	// mouse state
-	private static boolean isMousePressed = false;
+	public static boolean isMousePressed = false;
 	private static double mouseX = 0;
 	private static double mouseY = 0;
 
 	// queue of typed key characters
-	private static LinkedList<Character> keysTyped = new LinkedList<Character>();
+	public static LinkedList<Character> keysTyped = new LinkedList<Character>();
 
 	// set of key codes currently pressed down
 	private static TreeSet<Integer> keysDown = new TreeSet<Integer>();
@@ -739,7 +740,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	}
 
 	// create the menu bar (changed to private)
-	
+
 
 
 	/***************************************************************************
@@ -1672,7 +1673,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
-	
+
 	}
 
 
@@ -1756,12 +1757,12 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	 * This method cannot be called directly.
 	 */
 	@Override
-	public void mousePressed(MouseEvent e) {
-		synchronized (mouseLock) {
-			mouseX = StdDraw.userX(e.getX());
-			mouseY = StdDraw.userY(e.getY());
-			isMousePressed = true;
-		}
+	public void mousePressed(MouseEvent e) {//Changes - David Bowie
+		mouseX = StdDraw.userX(e.getX());
+		mouseY = StdDraw.userY(e.getY());
+		isMousePressed = true;
+		pointOfMouse = new Point3D(mouseX,mouseY);
+		//System.out.println("************"+StdDraw.isMousePressed());
 	}
 
 	/**
@@ -1848,9 +1849,8 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	 *         {@code false} otherwise
 	 */
 	public static boolean isKeyPressed(int keycode) {
-		synchronized (keyLock) {
-			return keysDown.contains(keycode);
-		}
+		return keysDown.contains(keycode);
+
 	}
 
 
@@ -1883,8 +1883,6 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 			keysDown.remove(e.getKeyCode());
 		}
 	}
-
-
 
 
 	/**

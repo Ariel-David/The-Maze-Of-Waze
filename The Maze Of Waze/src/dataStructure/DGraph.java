@@ -39,7 +39,6 @@ public class DGraph implements graph, Serializable{
 	public ArrayList<fruit> fruits = new ArrayList<fruit>();
 	public int countFruits = 0;
 	public int countNode = 0;
-	public int countRobots = 0;
 	public int countEdge = 0;
 	public int ModeCount = 0;
 
@@ -68,10 +67,9 @@ public class DGraph implements graph, Serializable{
 		countNode++;
 		ModeCount++;
 	}
-
+	
 	public void addRobot(robot r) {
 		robots.add(r);
-		countRobots++;
 		ModeCount++;
 	}
 
@@ -165,12 +163,7 @@ public class DGraph implements graph, Serializable{
 			int src_node = 0; 
 			line = new JSONObject(info);
 			JSONObject ttt = line.getJSONObject("GameServer");
-			int rs = ttt.getInt("robots");
-			for(int a = 0;a<rs;a++) {
-				game.addRobot(src_node+a);
-			}
 
-			String robotList = game.getRobots().toString();
 			/*Initialise the nodes*/
 			line1 = new JSONObject(g);
 			JSONArray nodes = line1.getJSONArray("Nodes");
@@ -190,22 +183,6 @@ public class DGraph implements graph, Serializable{
 				int dest = current.getInt("dest");
 				double w = current.getDouble("w");
 				this.connect(src, dest, w);
-			}
-
-			/*Initialise the robots*/
-			JSONArray r = new JSONArray(robotList);
-			for(int i=0; i<r.length(); i++) {
-				JSONObject current = r.getJSONObject(i);
-				JSONObject current2 = current.getJSONObject("Robot");
-				int id = current2.getInt("id");
-				double value = current2.getDouble("value");
-				int src = current2.getInt("src");
-				int dest = current2.getInt("dest");
-				int speed = current2.getInt("speed");
-				Object pos = current2.get("pos");
-				Point3D p = new Point3D(pos.toString());
-				robot ro = new robot(id, src, dest, speed, value, p);
-				this.addRobot(ro);
 			}
 
 			/*Initialise the fruits*/
