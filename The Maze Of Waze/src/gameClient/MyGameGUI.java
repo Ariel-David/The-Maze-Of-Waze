@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+
 import Server.Game_Server;
 import Server.game_service;
 
@@ -41,7 +42,7 @@ public class MyGameGUI{
 			ggg.initMyGui();
 		} 
 		catch (JSONException e) {
-			e.printStackTrace();
+			System.exit(0);
 		}
 	}
 
@@ -90,47 +91,54 @@ public class MyGameGUI{
 		if(gameType == type[0]) {
 			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
 					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
-			scenario_num = Integer.parseInt(level.toString());
-			game = Game_Server.getServer(scenario_num);
-			graph.initGraph(game);
-			init(graph);
-			setScale();
-			StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
-			drawEdges();
-			drawVertex();
-			drawKey();
-			drawDirection();
-			drawFruitsManual();
-			drawEdgesWeight();
-			JOptionPane.showMessageDialog(null, "Please put " +getRobotNumber()+" robots");
-			ManualGame.drawRobotManual(graph,game);
-			game.startGame();
-			while(game.isRunning()) {
-				printScore(game);
-				ManualGame.moveRobotsManual(-1,game,graph);
-				StdDraw.clear();
-				StdDraw.enableDoubleBuffering();
-				updateGraphManual();
-				StdDraw.show();
-			}
-			game.stopGame();
-			while(!game.isRunning()) {
-				int scoreInt = 0;
-				String results = game.toString();
-				StdDraw.setPenColor(Color.black);
-				StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
-				StdDraw.clear();
+			try {
+				scenario_num = Integer.parseInt(level.toString());
+				game = Game_Server.getServer(scenario_num);
+				graph.initGraph(game);
+				init(graph);
+				setScale();
 				StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
-				StdDraw.enableDoubleBuffering();
-				StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "                 Game Over!");
-				JSONObject score = new JSONObject(results);
-				JSONObject ttt = score.getJSONObject("GameServer");
-				scoreInt = ttt.getInt("grade");
-				String scoreStr = "Your Score: " + scoreInt;
-				StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
-				StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
-				StdDraw.show();
-				//	kml.saveToFile(""+scenario_num,results);
+				drawEdges();
+				drawVertex();
+				drawKey();
+				drawDirection();
+				drawFruitsManual();
+				drawEdgesWeight();
+				JOptionPane.showMessageDialog(null, "Please put " +getRobotNumber()+" robots");
+				ManualGame.drawRobotManual(graph,game);
+				JOptionPane.showMessageDialog(null, "Please choose the player with the keyboard and click on the number "
+						+ "of the robot you want to play with");
+				game.startGame();
+				while(game.isRunning()) {
+					printScore(game);
+					ManualGame.moveRobotsManual(-1,game,graph);
+					StdDraw.clear();
+					StdDraw.enableDoubleBuffering();
+					updateGraphManual();
+					StdDraw.show();
+				}
+				game.stopGame();
+				while(!game.isRunning()) {
+					int scoreInt = 0;
+					String results = game.toString();
+					StdDraw.setPenColor(Color.black);
+					StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
+					StdDraw.clear();
+					StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
+					StdDraw.enableDoubleBuffering();
+					StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "                 Game Over!");
+					JSONObject score = new JSONObject(results);
+					JSONObject ttt = score.getJSONObject("GameServer");
+					scoreInt = ttt.getInt("grade");
+					String scoreStr = "Your Score: " + scoreInt;
+					StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
+					StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
+					StdDraw.show();
+					//	kml.saveToFile(""+scenario_num,results);
+				}
+			}
+			catch (Exception e) {
+				System.exit(0);
 			}
 		}
 
@@ -138,41 +146,47 @@ public class MyGameGUI{
 		if(gameType == type[1]) {
 			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
 					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
-			scenario_num = Integer.parseInt(level.toString());
-			kml = new KML_Logger(scenario_num);
-			game = Game_Server.getServer(scenario_num);
-			JOptionPane.showMessageDialog(null, "This game inculde " +getRobotNumber()+" robots");
-			paint();
-			fruit [] arr = AutoGame.sortByValue(graph.fruits);
-			AutoGame.putRobot(arr,game,graph);
-			game.startGame();
-			while(game.isRunning()) {
-				AutoGame.moveRobotsAuto(game,graph);
-				printScore(game);
-				StdDraw.clear();
-				StdDraw.enableDoubleBuffering();
-				updateGraphAuto();
-				StdDraw.show();
+			try {
+				scenario_num = Integer.parseInt(level.toString());
+				kml = new KML_Logger(scenario_num);
+				game = Game_Server.getServer(scenario_num);
+				JOptionPane.showMessageDialog(null, "This game inculde " +getRobotNumber()+" robots");
+				paint();
+				fruit [] arr = AutoGame.sortByValue(graph.fruits);
+				AutoGame.putRobot(arr,game,graph);
+				game.startGame();
+				while(game.isRunning()) {
+					AutoGame.moveRobotsAuto(game,graph);
+					printScore(game);
+					StdDraw.clear();
+					StdDraw.enableDoubleBuffering();
+					updateGraphAuto();
+					StdDraw.show();
+				}
+				kml.KML_Stop();
+				game.stopGame();
+				while(!game.isRunning()) {
+					int scoreInt = 0;
+					String results = game.toString();
+					StdDraw.setPenColor(Color.black);
+					StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
+					StdDraw.clear();
+					StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
+					StdDraw.enableDoubleBuffering();
+					StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "                 Game Over!");
+					JSONObject score = new JSONObject(results);
+					JSONObject ttt = score.getJSONObject("GameServer");
+					scoreInt = ttt.getInt("grade");
+					String scoreStr = "Your Score: " + scoreInt;
+					StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
+					StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
+					StdDraw.show();
+				}
 			}
-			kml.KML_Stop();
-			game.stopGame();
-			while(!game.isRunning()) {
-				int scoreInt = 0;
-				String results = game.toString();
-				StdDraw.setPenColor(Color.black);
-				StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
-				StdDraw.clear();
-				StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
-				StdDraw.enableDoubleBuffering();
-				StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "                 Game Over!");
-				JSONObject score = new JSONObject(results);
-				JSONObject ttt = score.getJSONObject("GameServer");
-				scoreInt = ttt.getInt("grade");
-				String scoreStr = "Your Score: " + scoreInt;
-				StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
-				StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
-				StdDraw.show();
+			catch (Exception e) {
+				System.exit(0);
 			}
+
 		}
 	}
 
@@ -247,7 +261,7 @@ public class MyGameGUI{
 			index++;
 		}
 	}
-	
+
 	/**
 	 * updating the graph after the changes of moving the robots and the new location of the
 	 * fruits. 
@@ -489,7 +503,7 @@ public class MyGameGUI{
 			}
 		}
 	}
-	
+
 	/**
 	 * drawing the fruits on the graph on the manual game
 	 */
