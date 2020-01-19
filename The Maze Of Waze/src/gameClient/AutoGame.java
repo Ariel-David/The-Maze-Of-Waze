@@ -19,6 +19,12 @@ public class AutoGame {
 	static game_service game;
 	static double Epsilon = 0.000001;
 
+	/**
+	 * this function put the robot on the graph according to where fruits are
+	 * @param arr
+	 * @param game
+	 * @param graph
+	 */
 	public static void putRobot(fruit [] arr,game_service game,DGraph graph) {
 		try {
 			edge_data e = new Edge();
@@ -38,6 +44,12 @@ public class AutoGame {
 		} 
 	}
 
+	/**
+	 * this algorithm moving each of the robot after finding the worth way to a specific fruit
+	 * in order to find the worth way i used the shorterPathDist() function.
+	 * @param game
+	 * @param graph
+	 */
 	public static void moveRobotsAuto(game_service game,DGraph graph) {
 		for(int i=0; i<graph.robots.size(); i++) {
 			if(graph.robots.get(i).getDest() == -1) {
@@ -67,6 +79,13 @@ public class AutoGame {
 
 	}
 
+	/**
+	 * this function is sorting the fruit list according to values
+	 * this help to put in the start of the game the robot on the vertex that are
+	 * close to fruits that have a big value
+	 * @param list
+	 * @return
+	 */
 	public static fruit[] sortByValue(List<fruit> list) {
 		fruit [] arr = new fruit[list.size()];
 		for (int i=0; i<arr.length; i++) {

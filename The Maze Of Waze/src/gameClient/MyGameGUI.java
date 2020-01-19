@@ -1,7 +1,6 @@
 package gameClient;
 import java.awt.Color;
 import java.awt.Font;
-import java.time.LocalTime;
 import java.util.ArrayList;
 
 import java.util.Iterator;
@@ -18,7 +17,6 @@ import Server.game_service;
 
 import dataStructure.DGraph;
 import dataStructure.graph;
-import de.micromata.opengis.kml.v_2_2_0.Kml;
 import elements.Edge;
 
 import elements.edge_data;
@@ -34,8 +32,8 @@ public class MyGameGUI{
 	static game_service game;
 	static double Epsilon = 0.000001;
 	private static KML_Logger kml;
+	private static int scenario_num;
 	private Thread t;
-
 
 	public static void main(String[] args) {
 		MyGameGUI ggg = new MyGameGUI();
@@ -43,7 +41,6 @@ public class MyGameGUI{
 			ggg.initMyGui();
 		} 
 		catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -53,7 +50,6 @@ public class MyGameGUI{
 		init(graph);
 		drawGraph();
 	}
-
 
 	/**
 	 * Default constructor
@@ -71,6 +67,10 @@ public class MyGameGUI{
 		MyGameGUI.graph = (DGraph) g;
 	}
 
+	/**
+	 * this function initialise the game, according the choosing of type of the game -  manual or auto  
+	 * @throws JSONException
+	 */
 	private void initMyGui() throws JSONException {
 		drawGraph();
 		String[] type = new String[2];
@@ -90,31 +90,27 @@ public class MyGameGUI{
 		if(gameType == type[0]) {
 			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
 					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
-			int scenario_num = Integer.parseInt(level.toString());
+			scenario_num = Integer.parseInt(level.toString());
 			game = Game_Server.getServer(scenario_num);
 			graph.initGraph(game);
 			init(graph);
-//			kml = new KML_Logger(this);
-//			kml.BuildGraph();
 			setScale();
 			StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
 			drawEdges();
 			drawVertex();
-			printKey();
+			drawKey();
 			drawDirection();
-			drawFruits();
+			drawFruitsManual();
 			drawEdgesWeight();
-			//paint();
 			JOptionPane.showMessageDialog(null, "Please put " +getRobotNumber()+" robots");
 			ManualGame.drawRobotManual(graph,game);
-			ThreadKML();
 			game.startGame();
 			while(game.isRunning()) {
 				printScore(game);
 				ManualGame.moveRobotsManual(-1,game,graph);
 				StdDraw.clear();
 				StdDraw.enableDoubleBuffering();
-				updateGraph();
+				updateGraphManual();
 				StdDraw.show();
 			}
 			game.stopGame();
@@ -134,7 +130,7 @@ public class MyGameGUI{
 				StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
 				StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
 				StdDraw.show();
-			//	kml.saveToFile(""+scenario_num,results);
+				//	kml.saveToFile(""+scenario_num,results);
 			}
 		}
 
@@ -142,22 +138,23 @@ public class MyGameGUI{
 		if(gameType == type[1]) {
 			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
 					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
-			int scenario_num = Integer.parseInt(level.toString());
+			scenario_num = Integer.parseInt(level.toString());
+			kml = new KML_Logger(scenario_num);
 			game = Game_Server.getServer(scenario_num);
 			JOptionPane.showMessageDialog(null, "This game inculde " +getRobotNumber()+" robots");
 			paint();
 			fruit [] arr = AutoGame.sortByValue(graph.fruits);
 			AutoGame.putRobot(arr,game,graph);
-			ThreadKML();
 			game.startGame();
 			while(game.isRunning()) {
 				AutoGame.moveRobotsAuto(game,graph);
 				printScore(game);
 				StdDraw.clear();
 				StdDraw.enableDoubleBuffering();
-				updateGraph();
+				updateGraphAuto();
 				StdDraw.show();
 			}
+			kml.KML_Stop();
 			game.stopGame();
 			while(!game.isRunning()) {
 				int scoreInt = 0;
@@ -175,7 +172,6 @@ public class MyGameGUI{
 				StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
 				StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
 				StdDraw.show();
-			///	kml.saveToFile(""+scenario_num,results);
 			}
 		}
 	}
@@ -187,20 +183,86 @@ public class MyGameGUI{
 		setScale();
 		drawEdges();
 		drawVertex();
-		printKey();
+		drawKey();
 		drawDirection();
 		drawFruits();
 		drawEdgesWeight();
 	}
 
-	public void updateGraph() throws JSONException {
+	/**
+	 * updating the graph after the changes of moving the robots and the new location of the
+	 * fruits. 
+	 * the new location is taken from the server game.
+	 * drawing the fruits and the robots
+	 * @throws JSONException
+	 */
+	public void updateGraphAuto() throws JSONException {
 		StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
 		drawEdges();
 		drawVertex();
-		printKey();
+		drawKey();
 		drawDirection();
 		drawEdgesWeight();
 		drawFruits();
+		printScore(game);
+		String fruitList = game.getFruits().toString();
+		String robotList = game.getRobots().toString();
+
+		/*Initialise fruits from json*/
+		graph.fruits.clear();
+		JSONArray f = new JSONArray(fruitList);
+		int index = 0;
+		for(int i=0; i<f.length(); i++) {
+			JSONObject current = f.getJSONObject(i);
+			JSONObject current2 = current.getJSONObject("Fruit");
+			int type = current2.getInt("type");
+			double value = current2.getDouble("value");
+			Object pos = current2.get("pos");
+			Point3D p = new Point3D(pos.toString());
+			fruit fu = new fruit(type, value, p);
+			graph.addFruit(fu);
+		}
+		/*Initialise robots from json*/
+		graph.robots.clear();
+		JSONArray r = new JSONArray(robotList);
+		for(int j=0; j<r.length(); j++) {
+			JSONObject line = r.getJSONObject(j);
+			JSONObject robotline = line.getJSONObject("Robot");
+			int id = robotline.getInt("id");
+			double value1 = robotline.getDouble("value");
+			int src = robotline.getInt("src");
+			int dest = robotline.getInt("dest");
+			int speed = robotline.getInt("speed");
+			Object pos1 = robotline.get("pos");
+			Point3D point = new Point3D(pos1.toString());
+			robot ro = new robot(id, src, dest, speed, value1, point);
+			graph.addRobot(ro);
+			game.addRobot(ro.getSrc());
+			String[] photo = new String[3];
+			photo[0] = "data\\monkey.png";
+			photo[1] = "data\\monkey1.png";
+			photo[2] = "data\\monkey2.png";
+			kml.Place_Mark("data\\monkey.png",ro.getPos().toString());
+			StdDraw.picture(ro.getPos().x(), ro.getPos().y(),photo[index],0.003,0.0015);
+			index++;
+		}
+	}
+	
+	/**
+	 * updating the graph after the changes of moving the robots and the new location of the
+	 * fruits. 
+	 * the new location is taken from the server game.
+	 * drawing the fruits and the robots
+	 * @throws JSONException
+	 */
+	public void updateGraphManual() throws JSONException {
+		StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
+		drawEdges();
+		drawVertex();
+		drawKey();
+		drawDirection();
+		drawEdgesWeight();
+		drawFruitsManual();
 		printScore(game);
 		String fruitList = game.getFruits().toString();
 		String robotList = game.getRobots().toString();
@@ -244,6 +306,10 @@ public class MyGameGUI{
 		}
 	}
 
+	/**
+	 * return the x value of the minimum vertex in the graph
+	 * @return
+	 */
 	private double getXmin() {
 		double x_min = Double.MAX_VALUE;
 		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
@@ -256,6 +322,10 @@ public class MyGameGUI{
 		return x_min;
 	}
 
+	/**
+	 * return the x value of the maximum vertex in the graph
+	 * @return
+	 */
 	private double getXmax() {
 		double x_max = Double.MIN_VALUE;
 		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
@@ -268,6 +338,10 @@ public class MyGameGUI{
 		return x_max;
 	}
 
+	/**
+	 * return the y value of the minimum vertex in the graph
+	 * @return
+	 */
 	private double getYmin() {
 		double y_min = Double.MAX_VALUE;
 		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
@@ -280,6 +354,10 @@ public class MyGameGUI{
 		return y_min;
 	}
 
+	/**
+	 * return the y value of the maximum vertex in the graph
+	 * @return
+	 */
 	private double getYmax() {
 		double y_max = Double.MIN_VALUE;
 		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
@@ -292,6 +370,10 @@ public class MyGameGUI{
 		return y_max;
 	}
 
+	/**
+	 * setting the scale of the canvas
+	 * set the size of the canvas
+	 */
 	private void setScale() {
 		StdDraw.setCanvasSize(1250 , 650); 
 		StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 1.1,1.0);	
@@ -299,6 +381,9 @@ public class MyGameGUI{
 		StdDraw.setYscale(getYmin()-0.001,getYmax()+0.001);
 	}
 
+	/**
+	 * drawing the vertexes on the graph
+	 */
 	private void drawVertex() {
 		StdDraw.setPenColor(Color.black);
 		StdDraw.setPenRadius(0.017);
@@ -311,7 +396,10 @@ public class MyGameGUI{
 		}
 	}
 
-	private void printKey() {
+	/**
+	 * drawing the key values on the graph
+	 */
+	private void drawKey() {
 		StdDraw.setPenColor(Color.black);
 		StdDraw.setPenRadius(0.30);
 		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
@@ -322,6 +410,9 @@ public class MyGameGUI{
 		}
 	}
 
+	/**
+	 * drawing the edges on the graph
+	 */
 	private void drawEdges() {
 		StdDraw.setPenColor(Color.orange);
 		StdDraw.setPenRadius(0.006);
@@ -336,6 +427,9 @@ public class MyGameGUI{
 		}
 	}
 
+	/**
+	 * drawing the directions values on the graph
+	 */
 	private void drawDirection() {
 		Iterator<node_data> iterNodes = MyGameGUI.graph.getV().iterator();
 		while(iterNodes.hasNext()){
@@ -350,6 +444,9 @@ public class MyGameGUI{
 		}
 	}
 
+	/**
+	 * drawing the weight of the edges on the graph
+	 */
 	private void drawEdgesWeight() {
 		StdDraw.setFont(new Font("Ariel", 2, 14));
 		StdDraw.setPenColor(Color.BLUE.darker());
@@ -370,16 +467,42 @@ public class MyGameGUI{
 		}
 	}
 
+	/**
+	 * drawing the fruits on the graph on the auto game.
+	 */
 	private void drawFruits() {
 		Iterator<fruit> iter = MyGameGUI.graph.fruits.iterator();
 		while(iter.hasNext()) {
-			fruit currentNode = iter.next();
-			double x = currentNode.getPos().x();
-			double y = currentNode.getPos().y();
-			if(currentNode.type  == 1) {
+			fruit currentFruit = iter.next();
+			double x = currentFruit.getPos().x();
+			double y = currentFruit.getPos().y();
+			if(currentFruit.type  == 1) {
+				kml.Place_Mark("fruit_1",currentFruit.getPos().toString());
 				StdDraw.picture(x, y, "data\\apple.png", 0.001, 0.001);
 			}
-			else if (currentNode.type == -1){
+			else if (currentFruit.type == -1){
+				kml.Place_Mark("fruit_-1",currentFruit.getPos().toString());
+				StdDraw.picture(x, y, "data\\banana.png", 0.00100, 0.00070);	
+			}
+			else {
+				throw new RuntimeException("valid type of fruit");
+			}
+		}
+	}
+	
+	/**
+	 * drawing the fruits on the graph on the manual game
+	 */
+	private void drawFruitsManual() {
+		Iterator<fruit> iter = MyGameGUI.graph.fruits.iterator();
+		while(iter.hasNext()) {
+			fruit currentFruit = iter.next();
+			double x = currentFruit.getPos().x();
+			double y = currentFruit.getPos().y();
+			if(currentFruit.type  == 1) {
+				StdDraw.picture(x, y, "data\\apple.png", 0.001, 0.001);
+			}
+			else if (currentFruit.type == -1){
 				StdDraw.picture(x, y, "data\\banana.png", 0.00100, 0.00070);	
 			}
 			else {
@@ -388,6 +511,11 @@ public class MyGameGUI{
 		}
 	}
 
+	/**
+	 * return the number of the robot in the game
+	 * @return
+	 * @throws JSONException
+	 */
 	public static int getRobotNumber() throws JSONException {
 		String info = game.toString();
 		JSONObject line;
@@ -397,7 +525,12 @@ public class MyGameGUI{
 		return rs;
 	}
 
-
+	/**
+	 * this function finding the edge according to a specific fruit
+	 * return the edge
+	 * @param f
+	 * @return
+	 */
 	public static edge_data findEdge(fruit f) {
 		edge_data e = new Edge();
 		for (node_data currentNode : graph.getV()) {
@@ -424,6 +557,12 @@ public class MyGameGUI{
 		return null;
 	}
 
+	/**
+	 * this function calculate the distance between src and dest that given
+	 * @param src
+	 * @param dest
+	 * @return
+	 */
 	private static double distance(Point3D src, Point3D dest) {
 		double ans = 0;
 		double x1 = src.x();
@@ -435,6 +574,12 @@ public class MyGameGUI{
 		return ans;
 	}
 
+	/**
+	 * finding the shortest path between src and dest and return the sum of the sum of the path
+	 * @param src
+	 * @param dest
+	 * @return
+	 */
 	public static double shortestPathDist(int src, int dest) {
 		String s = "";
 		if(src == dest) {
@@ -465,6 +610,12 @@ public class MyGameGUI{
 		}
 	}
 
+	/**
+	 * return a list of nodes of the shorter path between src and dest 
+	 * @param src
+	 * @param dest
+	 * @return
+	 */
 	public static List<node_data> shortestPath(int src, int dest) {		
 		List<node_data> visited = new ArrayList<>();
 		for (node_data node_data : graph.getV()) {
@@ -489,6 +640,10 @@ public class MyGameGUI{
 		return visited;
 	}
 
+	/**
+	 * this function print the score and the time on the screen 
+	 * @param game
+	 */
 	public void printScore(game_service game) {
 		String results = game.toString();
 		long t = game.timeToEnd();
@@ -508,36 +663,6 @@ public class MyGameGUI{
 		catch (Exception e) {
 			System.out.println("Failed to print score");
 		}
-	}
-
-	public void ThreadKML(){
-		t = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while(game.isRunning()){
-					if(graph!=null){
-						try {
-							long timeToSleep = 100;
-							Thread.sleep(timeToSleep);
-							String Starttime  = java.time.LocalDate.now()+"T"+java.time.LocalTime.now();
-							LocalTime test = LocalTime.now();
-							test= test.plusNanos(timeToSleep*1000000);
-							String endTime = java.time.LocalDate.now()+"T"+test;
-
-//							kml.setFruits(Starttime,endTime);
-//							kml.setBots(Starttime,endTime);
-						}
-
-						catch (Exception e) {
-							e.printStackTrace();
-						}
-					}
-				}
-				t.interrupt();
-			}
-		}
-				);
-		t.start();
 	}
 
 	public static DGraph getGraph() {
@@ -565,11 +690,11 @@ public class MyGameGUI{
 	}
 
 	public KML_Logger getKml() {
-		return this.kml;
+		return MyGameGUI.kml;
 	}
 
 	public void setKml(KML_Logger kml) {
-		this.kml = kml;
+		MyGameGUI.kml = kml;
 	}
 
 	public Thread getT() {
