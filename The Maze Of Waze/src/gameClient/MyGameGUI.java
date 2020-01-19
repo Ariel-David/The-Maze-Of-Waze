@@ -1,8 +1,7 @@
 package gameClient;
 import java.awt.Color;
 import java.awt.Font;
-
-
+import java.time.LocalTime;
 import java.util.ArrayList;
 
 import java.util.Iterator;
@@ -19,6 +18,7 @@ import Server.game_service;
 
 import dataStructure.DGraph;
 import dataStructure.graph;
+import de.micromata.opengis.kml.v_2_2_0.Kml;
 import elements.Edge;
 
 import elements.edge_data;
@@ -33,6 +33,9 @@ public class MyGameGUI{
 	private static DGraph graph;
 	static game_service game;
 	static double Epsilon = 0.000001;
+	private static KML_Logger kml;
+	private Thread t;
+
 
 	public static void main(String[] args) {
 		MyGameGUI ggg = new MyGameGUI();
@@ -68,6 +71,114 @@ public class MyGameGUI{
 		MyGameGUI.graph = (DGraph) g;
 	}
 
+	private void initMyGui() throws JSONException {
+		drawGraph();
+		String[] type = new String[2];
+		type[0] = "Manual Game";
+		type[1] = "Auto Game";
+
+		/** choosing the type of the game **/
+		Object gameType = JOptionPane.showInputDialog(null, "Choose a game mode", "Message",
+				JOptionPane.INFORMATION_MESSAGE, null, type, type[0]);
+
+		String[] levels = new String[24];
+		for(int i=0; i<levels.length; i++) {
+			levels[i] = ""+i;
+		}
+
+		/** Manual game **/
+		if(gameType == type[0]) {
+			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
+					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
+			int scenario_num = Integer.parseInt(level.toString());
+			game = Game_Server.getServer(scenario_num);
+			graph.initGraph(game);
+			init(graph);
+//			kml = new KML_Logger(this);
+//			kml.BuildGraph();
+			setScale();
+			StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
+			drawEdges();
+			drawVertex();
+			printKey();
+			drawDirection();
+			drawFruits();
+			drawEdgesWeight();
+			//paint();
+			JOptionPane.showMessageDialog(null, "Please put " +getRobotNumber()+" robots");
+			ManualGame.drawRobotManual(graph,game);
+			ThreadKML();
+			game.startGame();
+			while(game.isRunning()) {
+				printScore(game);
+				ManualGame.moveRobotsManual(-1,game,graph);
+				StdDraw.clear();
+				StdDraw.enableDoubleBuffering();
+				updateGraph();
+				StdDraw.show();
+			}
+			game.stopGame();
+			while(!game.isRunning()) {
+				int scoreInt = 0;
+				String results = game.toString();
+				StdDraw.setPenColor(Color.black);
+				StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
+				StdDraw.clear();
+				StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
+				StdDraw.enableDoubleBuffering();
+				StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "                 Game Over!");
+				JSONObject score = new JSONObject(results);
+				JSONObject ttt = score.getJSONObject("GameServer");
+				scoreInt = ttt.getInt("grade");
+				String scoreStr = "Your Score: " + scoreInt;
+				StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
+				StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
+				StdDraw.show();
+			//	kml.saveToFile(""+scenario_num,results);
+			}
+		}
+
+		/** Auto game **/
+		if(gameType == type[1]) {
+			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
+					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
+			int scenario_num = Integer.parseInt(level.toString());
+			game = Game_Server.getServer(scenario_num);
+			JOptionPane.showMessageDialog(null, "This game inculde " +getRobotNumber()+" robots");
+			paint();
+			fruit [] arr = AutoGame.sortByValue(graph.fruits);
+			AutoGame.putRobot(arr,game,graph);
+			ThreadKML();
+			game.startGame();
+			while(game.isRunning()) {
+				AutoGame.moveRobotsAuto(game,graph);
+				printScore(game);
+				StdDraw.clear();
+				StdDraw.enableDoubleBuffering();
+				updateGraph();
+				StdDraw.show();
+			}
+			game.stopGame();
+			while(!game.isRunning()) {
+				int scoreInt = 0;
+				String results = game.toString();
+				StdDraw.setPenColor(Color.black);
+				StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
+				StdDraw.clear();
+				StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
+				StdDraw.enableDoubleBuffering();
+				StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "                 Game Over!");
+				JSONObject score = new JSONObject(results);
+				JSONObject ttt = score.getJSONObject("GameServer");
+				scoreInt = ttt.getInt("grade");
+				String scoreStr = "Your Score: " + scoreInt;
+				StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
+				StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
+				StdDraw.show();
+			///	kml.saveToFile(""+scenario_num,results);
+			}
+		}
+	}
 
 	/**
 	 * Draw the graph according to this methods the Graph from a string.
@@ -80,6 +191,57 @@ public class MyGameGUI{
 		drawDirection();
 		drawFruits();
 		drawEdgesWeight();
+	}
+
+	public void updateGraph() throws JSONException {
+		StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
+		drawEdges();
+		drawVertex();
+		printKey();
+		drawDirection();
+		drawEdgesWeight();
+		drawFruits();
+		printScore(game);
+		String fruitList = game.getFruits().toString();
+		String robotList = game.getRobots().toString();
+
+		/*Initialise fruits from json*/
+		graph.fruits.clear();
+		JSONArray f = new JSONArray(fruitList);
+		int index = 0;
+		for(int i=0; i<f.length(); i++) {
+			JSONObject current = f.getJSONObject(i);
+			JSONObject current2 = current.getJSONObject("Fruit");
+			int type = current2.getInt("type");
+			double value = current2.getDouble("value");
+			Object pos = current2.get("pos");
+			Point3D p = new Point3D(pos.toString());
+			fruit fu = new fruit(type, value, p);
+			graph.addFruit(fu);
+		}
+		/*Initialise robots from json*/
+		graph.robots.clear();
+		JSONArray r = new JSONArray(robotList);
+		for(int j=0; j<r.length(); j++) {
+			JSONObject line = r.getJSONObject(j);
+			JSONObject robotline = line.getJSONObject("Robot");
+			int id = robotline.getInt("id");
+			double value1 = robotline.getDouble("value");
+			int src = robotline.getInt("src");
+			int dest = robotline.getInt("dest");
+			int speed = robotline.getInt("speed");
+			Object pos1 = robotline.get("pos");
+			Point3D point = new Point3D(pos1.toString());
+			robot ro = new robot(id, src, dest, speed, value1, point);
+			graph.addRobot(ro);
+			game.addRobot(ro.getSrc());
+			String[] photo = new String[3];
+			photo[0] = "data\\monkey.png";
+			photo[1] = "data\\monkey1.png";
+			photo[2] = "data\\monkey2.png";
+			StdDraw.picture(ro.getPos().x(), ro.getPos().y(),photo[index],0.003,0.0015);
+			index++;
+		}
 	}
 
 	private double getXmin() {
@@ -162,7 +324,7 @@ public class MyGameGUI{
 
 	private void drawEdges() {
 		StdDraw.setPenColor(Color.orange);
-		StdDraw.setPenRadius(0.003);
+		StdDraw.setPenRadius(0.006);
 		Iterator<node_data> iterNodes = MyGameGUI.graph.getV().iterator();
 		while(iterNodes.hasNext()){
 			node_data currentNode = iterNodes.next();
@@ -181,7 +343,7 @@ public class MyGameGUI{
 			Iterator<edge_data> iterEdges = MyGameGUI.graph.getE(currentNode.getKey()).iterator();
 			while(iterEdges.hasNext()){
 				edge_data currentEdge = iterEdges.next();
-				StdDraw.setPenRadius(0.010);
+				StdDraw.setPenRadius(0.016);
 				StdDraw.setPenColor(StdDraw.GREEN);
 				StdDraw.point((currentNode.getLocation().x()+graph.getNode(currentEdge.getDest()).getLocation().x()*3)/4, (currentNode.getLocation().y()+graph.getNode(currentEdge.getDest()).getLocation().y()*3)/4);
 			}
@@ -235,87 +397,6 @@ public class MyGameGUI{
 		return rs;
 	}
 
-	private void initMyGui() throws JSONException {
-		drawGraph();
-		String[] type = new String[2];
-		type[0] = "Manual Game";
-		type[1] = "Auto Game";
-
-		/** choosing the type of the game **/
-		Object gameType = JOptionPane.showInputDialog(null, "Choose a game mode", "Message",
-				JOptionPane.INFORMATION_MESSAGE, null, type, type[0]);
-		String[] levels = new String[24];
-		for(int i=0; i<levels.length; i++) {
-			levels[i] = ""+i;
-		}
-
-		/** Manual game **/
-		if(gameType == type[0]) {
-			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
-					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
-			int scenario_num = Integer.parseInt(level.toString());
-			game = Game_Server.getServer(scenario_num);
-			JOptionPane.showMessageDialog(null, "Please put " +getRobotNumber()+" robots");
-			paint();
-			ManualGame.drawRobotManual(graph,game);
-			game.startGame();
-			while(game.isRunning()) {
-				ManualGame.moveRobotsManual(-1,game,graph);
-				printScore(game);
-				StdDraw.clear();
-				StdDraw.enableDoubleBuffering();
-				updateGraph();
-				StdDraw.show();
-			}
-			game.stopGame();
-			while(!game.isRunning()) {
-				String results = game.toString();
-				StdDraw.setPenColor(Color.black);
-				StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
-				StdDraw.clear();
-				StdDraw.enableDoubleBuffering();
-				StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
-				StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "             Game Over!");
-				StdDraw.setFont(new Font("Ariel", Font.BOLD, 30));
-				StdDraw.text(getXmin(), getYmin(), results);
-				StdDraw.show();
-			}
-		}
-
-		/** Auto game **/
-		if(gameType == type[1]) {
-			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
-					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
-			int scenario_num = Integer.parseInt(level.toString());
-			game = Game_Server.getServer(scenario_num);
-			JOptionPane.showMessageDialog(null, "This game inculde " +getRobotNumber()+" robots");
-			paint();
-			fruit [] arr = AutoGame.sortByValue(graph.fruits);
-			AutoGame.putRobot(arr,game,graph);
-			game.startGame();
-			while(game.isRunning()) {
-				AutoGame.moveRobotsAuto(game,graph);
-				printScore(game);
-				StdDraw.clear();
-				StdDraw.enableDoubleBuffering();
-				updateGraph();
-				StdDraw.show();
-			}
-			game.stopGame();
-			while(!game.isRunning()) {
-				String results = game.toString();
-				StdDraw.setPenColor(Color.black);
-				StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
-				StdDraw.clear();
-				StdDraw.enableDoubleBuffering();
-				StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.009,0.0050);	
-				StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "             Game Over!");
-				StdDraw.setFont(new Font("Ariel", Font.BOLD, 30));
-				StdDraw.text(getXmin()+0.7, getYmin(), results);
-				StdDraw.show();
-			}
-		}
-	}
 
 	public static edge_data findEdge(fruit f) {
 		edge_data e = new Edge();
@@ -385,7 +466,6 @@ public class MyGameGUI{
 	}
 
 	public static List<node_data> shortestPath(int src, int dest) {		
-		System.out.println("shortestPath "+src+","+dest);
 		List<node_data> visited = new ArrayList<>();
 		for (node_data node_data : graph.getV()) {
 			node_data.setInfo("");
@@ -393,15 +473,13 @@ public class MyGameGUI{
 		if(shortestPathDist(src, dest) == Double.POSITIVE_INFINITY) {
 			return null;
 		}
-		
+
 		if(src == dest) {
 			visited.add(graph.getNode(src));
 			return visited;
 		}
-		
-		
+
 		String str = graph.getNode(dest).getInfo();
-		System.out.println("shortestPath "+str);
 		str = str.substring(2);
 		String [] splitArray = str.split("->");
 		for(int i=0; i<splitArray.length; i++) {
@@ -409,51 +487,6 @@ public class MyGameGUI{
 		}
 		visited.add(graph.getNode(dest));
 		return visited;
-	}
-
-	public void updateGraph() throws JSONException {
-		StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
-		String fruitList = game.getFruits().toString();
-		String robotList = game.getRobots().toString();
-
-		/*Initialise fruits from json*/
-		graph.fruits.clear();
-		JSONArray f = new JSONArray(fruitList);
-		for(int i=0; i<f.length(); i++) {
-			JSONObject current = f.getJSONObject(i);
-			JSONObject current2 = current.getJSONObject("Fruit");
-			int type = current2.getInt("type");
-			double value = current2.getDouble("value");
-			Object pos = current2.get("pos");
-			Point3D p = new Point3D(pos.toString());
-			fruit fu = new fruit(type, value, p);
-			graph.addFruit(fu);
-		}
-		/*Initialise robots from json*/
-		graph.robots.clear();
-		JSONArray r = new JSONArray(robotList);
-		for(int j=0; j<r.length(); j++) {
-			JSONObject line = r.getJSONObject(j);
-			JSONObject robotline = line.getJSONObject("Robot");
-			int id = robotline.getInt("id");
-			double value1 = robotline.getDouble("value");
-			int src = robotline.getInt("src");
-			int dest = robotline.getInt("dest");
-			int speed = robotline.getInt("speed");
-			Object pos1 = robotline.get("pos");
-			Point3D point = new Point3D(pos1.toString());
-			robot ro = new robot(id, src, dest, speed, value1, point);
-			graph.addRobot(ro);
-			game.addRobot(ro.getSrc());
-			StdDraw.picture(ro.getPos().x(), ro.getPos().y(),"data\\monkey.png",0.00100,0.00080);
-		}
-		drawEdges();
-		drawVertex();
-		printKey();
-		drawDirection();
-		drawEdgesWeight();
-		drawFruits();
-		printScore(game);
 	}
 
 	public void printScore(game_service game) {
@@ -475,6 +508,76 @@ public class MyGameGUI{
 		catch (Exception e) {
 			System.out.println("Failed to print score");
 		}
+	}
+
+	public void ThreadKML(){
+		t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while(game.isRunning()){
+					if(graph!=null){
+						try {
+							long timeToSleep = 100;
+							Thread.sleep(timeToSleep);
+							String Starttime  = java.time.LocalDate.now()+"T"+java.time.LocalTime.now();
+							LocalTime test = LocalTime.now();
+							test= test.plusNanos(timeToSleep*1000000);
+							String endTime = java.time.LocalDate.now()+"T"+test;
+
+//							kml.setFruits(Starttime,endTime);
+//							kml.setBots(Starttime,endTime);
+						}
+
+						catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				t.interrupt();
+			}
+		}
+				);
+		t.start();
+	}
+
+	public static DGraph getGraph() {
+		return graph;
+	}
+
+	public static void setGraph(DGraph graph) {
+		MyGameGUI.graph = graph;
+	}
+
+	public static game_service getGame() {
+		return game;
+	}
+
+	public static void setGame(game_service game) {
+		MyGameGUI.game = game;
+	}
+
+	public static double getEpsilon() {
+		return Epsilon;
+	}
+
+	public static void setEpsilon(double epsilon) {
+		Epsilon = epsilon;
+	}
+
+	public KML_Logger getKml() {
+		return this.kml;
+	}
+
+	public void setKml(KML_Logger kml) {
+		this.kml = kml;
+	}
+
+	public Thread getT() {
+		return t;
+	}
+
+	public void setT(Thread t) {
+		this.t = t;
 	}
 }
 

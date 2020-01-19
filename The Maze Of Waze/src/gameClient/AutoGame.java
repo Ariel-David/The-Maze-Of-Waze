@@ -28,7 +28,7 @@ public class AutoGame {
 				e = MyGameGUI.findEdge(arr[i]);
 				n = graph.getNode(e.getSrc());
 				robot r = new robot(i, n.getKey(), -1,1, 0.0, n.getLocation());
-				StdDraw.picture(n.getLocation().x(), n.getLocation().y(),"data\\monkey.png",0.00100,0.00080);
+				StdDraw.picture(n.getLocation().x(), n.getLocation().y(),"data\\monkey.png",0.00131,0.000122);
 				graph.addRobot(r);
 				game.addRobot(r.getSrc());
 			}
@@ -48,7 +48,6 @@ public class AutoGame {
 				double wayCost = Double.MAX_VALUE;
 				for(int j=0; j<graph.fruits.size(); j++) {
 					e = MyGameGUI.findEdge(graph.fruits.get(j));
-					System.out.println("e: "+e.getSrc()+","+e.getDest());
 					double temp = MyGameGUI.shortestPathDist(src, e.getSrc());
 					if(temp < wayCost) {
 						wayCost = temp;
@@ -76,7 +75,6 @@ public class AutoGame {
 		bubbleSort(arr);
 		return arr;
 	}
-
 
 	public static void bubbleSort(fruit arr[]){ 
 		int n = arr.length; 

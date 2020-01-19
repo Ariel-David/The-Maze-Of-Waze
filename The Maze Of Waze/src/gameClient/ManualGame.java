@@ -16,7 +16,7 @@ import utils.StdDraw;
 public class ManualGame {
 	private static DGraph graph;
 	static game_service game;
-	static double Epsilon = 0.000001;
+	static double Epsilon = 0.0001;
 	private static int key = -1;
 	
 	public static void drawRobotManual(DGraph graph, game_service game) throws JSONException {
@@ -56,7 +56,7 @@ public class ManualGame {
 		game.move();
 	}
 	
-	public static int nextNodeMenual(DGraph g, int src,game_service game) throws JSONException {
+	public static int nextNodeMenual(DGraph graph, int src,game_service game) throws JSONException {
 		int dest = -1;
 		if(StdDraw.isMousePressed()) {
 			StdDraw.isMousePressed = false;
