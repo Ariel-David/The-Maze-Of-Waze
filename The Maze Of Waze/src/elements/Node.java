@@ -119,6 +119,7 @@ public class Node implements node_data, Serializable{
 	public void setTag(int t) {
 		this.tag = t;
 	}
+	
 	/**
 	 * An iterator that goes over the neighbours of specific node.
 	 * @return the iterator.
@@ -126,6 +127,7 @@ public class Node implements node_data, Serializable{
 	public Iterator<Node> iteretor() {
 		return this.iteretor();
 	}
+	
 	/**
 	 * To print the key of the node
 	 */

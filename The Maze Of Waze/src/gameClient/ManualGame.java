@@ -87,3 +87,4 @@ public class ManualGame {
 		return key;
 	}
 }
+

@@ -83,6 +83,4 @@ public class robot {
 		this.value = value;
 	}
 
-
-	
 }

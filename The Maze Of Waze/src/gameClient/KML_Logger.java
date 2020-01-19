@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
  * this is only for auto game.
  */
 
+
 class KML_Logger {
 
     private int level;
