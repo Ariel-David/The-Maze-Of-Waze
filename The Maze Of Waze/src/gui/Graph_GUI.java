@@ -73,8 +73,6 @@ public class Graph_GUI implements Serializable{
 		drawVertex();
 		printKey();
 		drawDirection();
-		drawRobots();
-		drawFruits();
 		//drawEdgesWeight();
 	}
 
@@ -194,34 +192,6 @@ public class Graph_GUI implements Serializable{
 				StdDraw.setFont(new Font("Ariel", Font.BOLD, 15));
 				StdDraw.setPenColor(Color.black);
 				StdDraw.text((currentNode.getLocation().x()+graph.getNode(currentEdge.getDest()).getLocation().x()*3)/4, (currentNode.getLocation().y()+graph.getNode(currentEdge.getDest()).getLocation().y()*3)/4, ""+ currentEdge.getWeight());
-			}
-		}
-	}
-
-	public void drawRobots() {
-		Iterator<robot> iter = this.graph.robots.iterator();
-		while(iter.hasNext()) {
-			robot currentNode = iter.next();
-			double x = currentNode.getPos().x();
-			double y = currentNode.getPos().y();
-			StdDraw.picture(x, y, "robot.png", 0.001, 0.001);
-		}
-	}
-
-	public void drawFruits() {
-		Iterator<fruit> iter = this.graph.fruits.iterator();
-		while(iter.hasNext()) {
-			fruit currentNode = iter.next();
-			double x = currentNode.getPos().x();
-			double y = currentNode.getPos().y();
-			if(currentNode.type  == 1) {
-				StdDraw.picture(x, y, "apple.png", 0.001, 0.001);
-			}
-			else if (currentNode.type == -1){
-				StdDraw.picture(x, y, "banana.png", 0.001, 0.001);	
-			}
-			else {
-				throw new RuntimeException("valid type of fruit");
 			}
 		}
 	}

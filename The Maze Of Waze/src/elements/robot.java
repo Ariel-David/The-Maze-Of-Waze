@@ -13,8 +13,9 @@ public class robot {
 		this.id = id;
 		this.src = src;
 		this.value = value;
-		this.speed = speed;
 		this.pos = pos;
+		this.dest = dest;
+		this.speed = speed;
 	}
 	
 	public robot(robot r) {
@@ -23,14 +24,15 @@ public class robot {
 		this.value = r.value;
 		this.pos = r.pos;
 		this.speed = r.speed;
+		this.dest = r.dest;
 	}
 	
 	public robot(Point3D p) {
 		this.pos = p;
 		this.id = 0;
 		this.src = 0;
-		this.value = 0;
-		this.speed = 1;
+		this.value = 0.0;
+		this.dest = -1;
 	}
 
 	public int getSrc() {

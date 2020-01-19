@@ -7,6 +7,11 @@ public class fruit {
 	public int type;
 	public Point3D pos;
 
+	public fruit() {
+		this.value = 0;
+		this.type = 0;
+		this.pos = null;
+	}
 	public fruit(int type, double value, Point3D pos) {
 		this.type = type;
 		this.value = value;
