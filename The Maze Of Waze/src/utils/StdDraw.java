@@ -72,7 +72,7 @@ import java.util.NoSuchElementException;
 import java.util.Stack;
 
 import javax.imageio.ImageIO;
-
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -501,6 +501,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	public static Graph_GUI graphGui = new Graph_GUI();
 	public static MyGameGUI mygraphGui = new MyGameGUI();
 	public static Point3D pointOfMouse;
+	static game_service game;
 
 	public static void setGui(Graph_GUI g) {
 		graphGui = g;			
@@ -734,12 +735,34 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);            // closes all windows
 		// frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);      // closes only current window
 		frame.setTitle("Standard Draw");
+		frame.setJMenuBar(createMenuBar());
 		frame.pack();
 		frame.requestFocusInWindow();
 		frame.setVisible(true);
 	}
 
 	// create the menu bar (changed to private)
+	private static JMenuBar createMenuBar() {
+		JMenuBar menuBar = new JMenuBar();
+		JMenu menu1 = new JMenu("Games Information");
+		JMenu menu2 = new JMenu("Winning Place");
+
+		menuBar.add(menu1);
+		menuBar.add(menu2);
+		JMenuItem menuItem1 = new JMenuItem("Amount of games played");
+		JMenuItem menuItem3 = new JMenuItem("Your current stage");
+		JMenuItem menuItem4 = new JMenuItem("Your best scores");
+		JMenuItem menuItem2 = new JMenuItem("Your position relative to others");
+		menuItem1.addActionListener(std);
+		menuItem2.addActionListener(std);
+		menuItem3.addActionListener(std);
+		menuItem4.addActionListener(std);
+		menu1.add(menuItem1);
+		menu1.add(menuItem3);
+		menu1.add(menuItem4);
+		menu2.add(menuItem2);
+		return menuBar;
+	}
 
 
 
@@ -1673,7 +1696,32 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		game = MyGameGUI.getGame();
+		switch(e.getActionCommand()) {
+		case "Amount of games played":
+			if(MyGameGUI.getUserID() == -1) {
+				JOptionPane.showMessageDialog(null,"Please enter your id first!");
+			}
 
+			else {
+				JOptionPane.showMessageDialog(null,"Number of games you played: "
+						+ MyGameGUI.getNumbersOfGames(),"Messege",1);
+			}	
+			break;
+
+		case "Your current stage":
+			JOptionPane.showMessageDialog(null,"Your current stage is: "
+					+ MyGameGUI.getCurrentLevel(),"Messege",1);
+			
+			break;
+
+		case "Your best scores":
+			break;
+
+		case "Your position relative to others":
+
+
+		}
 	}
 
 
@@ -1728,7 +1776,6 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 		}
 	}
 
-
 	/**
 	 * This method cannot be called directly.
 	 */
@@ -1758,11 +1805,13 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	 */
 	@Override
 	public void mousePressed(MouseEvent e) {//Changes - David Bowie
-		mouseX = StdDraw.userX(e.getX());
-		mouseY = StdDraw.userY(e.getY());
-		isMousePressed = true;
-		pointOfMouse = new Point3D(mouseX,mouseY);
-		//System.out.println("************"+StdDraw.isMousePressed());
+		synchronized (mouseLock) {
+			mouseX = StdDraw.userX(e.getX());
+			mouseY = StdDraw.userY(e.getY());
+			isMousePressed = true;
+			pointOfMouse = new Point3D(mouseX,mouseY);
+			//System.out.println("************"+StdDraw.isMousePressed());
+		}
 	}
 
 	/**

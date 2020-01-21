@@ -1,18 +1,17 @@
 package gameClient;
 import java.awt.Color;
 import java.awt.Font;
-import java.util.ArrayList;
-
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Iterator;
-import java.util.List;
-
 import javax.swing.JOptionPane;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-
 import Server.Game_Server;
 import Server.game_service;
 
@@ -35,16 +34,18 @@ public class MyGameGUI{
 	static double Epsilon = 0.000001;
 	private static KML_Logger kml;
 	private static int scenario_num;
-	private Thread t;
+	private static int userID = -1;
+	public static final String jdbcUrl="jdbc:mysql://db-mysql-ams3-67328-do-user-4468260-0.db.ondigitalocean.com:25060/oop?useUnicode=yes&characterEncoding=UTF-8&useSSL=false";
+	public static final String jdbcUser="student";
+	public static final String jdbcUserPassword="OOP2020student";
+	private static Thread t;
+	private static int level;
+//	public static int sleep;
 
 	public static void main(String[] args) {
 		MyGameGUI ggg = new MyGameGUI();
-		try {
-			ggg.initMyGui();
-		} 
-		catch (JSONException e) {
-			System.exit(0);
-		}
+		ggg.initMyGui();
+
 	}
 
 	private void paint() {
@@ -73,124 +74,261 @@ public class MyGameGUI{
 	 * this function initialise the game, according the choosing of type of the game -  manual or auto  
 	 * @throws JSONException
 	 */
-	private void initMyGui() throws JSONException {
+	private void initMyGui(){
 		drawGraph();
-		String[] type = new String[2];
-		type[0] = "Manual Game";
-		type[1] = "Auto Game";
+		try {
+			scenario_num = 0;
+			Object idOb = JOptionPane.showInputDialog("Please Enter your Id");
+			userID = Integer.parseInt(idOb.toString());
+			Game_Server.login(userID);
+			game = Game_Server.getServer(scenario_num);
+			String[] type = new String[2];
+			type[0] = "Manual Game";
+			type[1] = "Auto Game";
 
-		/** choosing the type of the game **/
-		Object gameType = JOptionPane.showInputDialog(null, "Choose a game mode", "Message",
-				JOptionPane.INFORMATION_MESSAGE, null, type, type[0]);
+			/** choosing the type of the game **/
+			Object gameType = JOptionPane.showInputDialog(null, "Choose a game mode", "Message",
+					JOptionPane.INFORMATION_MESSAGE, null, type, type[0]);
 
-		String[] levels = new String[24];
-		for(int i=0; i<levels.length; i++) {
-			levels[i] = ""+i;
-		}
+			String[] levels = new String[24];
+			for(int i=0; i<levels.length; i++) {
+				levels[i] = ""+i;
+			}
 
-		/** Manual game **/
-		if(gameType == type[0]) {
-			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
-					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
-			try {
-				scenario_num = Integer.parseInt(level.toString());
-				game = Game_Server.getServer(scenario_num);
-				graph.initGraph(game);
-				init(graph);
-				setScale();
-				StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
-				drawEdges();
-				drawVertex();
-				drawKey();
-				drawDirection();
-				drawFruitsManual();
-				drawEdgesWeight();
-				JOptionPane.showMessageDialog(null, "Please put " +getRobotNumber()+" robots");
-				ManualGame.drawRobotManual(graph,game);
-				JOptionPane.showMessageDialog(null, "Please choose the player with the keyboard and click on the number "
-						+ "of the robot you want to play with");
-				game.startGame();
-				while(game.isRunning()) {
-					printScore(game);
-					ManualGame.moveRobotsManual(-1,game,graph);
-					StdDraw.clear();
-					StdDraw.enableDoubleBuffering();
-					updateGraphManual();
-					StdDraw.show();
-				}
-				game.stopGame();
-				while(!game.isRunning()) {
-					int scoreInt = 0;
-					String results = game.toString();
+			/** Manual game **/
+			if(gameType == type[0]) {
+				Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
+						JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
+				try {
+					scenario_num = Integer.parseInt(level.toString());
+					game = Game_Server.getServer(scenario_num);
+					graph.initGraph(game);
+					init(graph);
+					JOptionPane.showMessageDialog(null, "Please choose the player with the keyboard and click on the number "
+							+ "of the robot you want to play with");
+					setScale();
+					StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
+					drawEdges();
+					drawVertex();
+					drawKey();
+					drawDirection();
+					drawFruitsManual();
+					drawEdgesWeight();
+					JOptionPane.showMessageDialog(null, "Please put " +getRobotNumber()+" robots");
+					ManualGame.drawRobotManual(graph,game);
+					game.startGame();
+					while(game.isRunning()) {
+						printScore(game);
+						ManualGame.moveRobotsManual(-1,game,graph);
+						StdDraw.clear();
+						StdDraw.enableDoubleBuffering();
+						updateGraphManual();
+						StdDraw.show();
+					}
+					game.stopGame();
 					StdDraw.setPenColor(Color.black);
 					StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
 					StdDraw.clear();
 					StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
 					StdDraw.enableDoubleBuffering();
 					StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "                 Game Over!");
-					JSONObject score = new JSONObject(results);
-					JSONObject ttt = score.getJSONObject("GameServer");
-					scoreInt = ttt.getInt("grade");
-					String scoreStr = "Your Score: " + scoreInt;
+					String scoreStr = "Your Score: " + getGrade(game);
 					StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
 					StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
+					printMoves(game);
 					StdDraw.show();
-					//	kml.saveToFile(""+scenario_num,results);
+				}
+				catch (Exception e) {
+					System.exit(0);
 				}
 			}
-			catch (Exception e) {
-				System.exit(0);
-			}
-		}
 
-		/** Auto game **/
-		if(gameType == type[1]) {
-			Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
-					JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
-			try {
-				scenario_num = Integer.parseInt(level.toString());
-				kml = new KML_Logger(scenario_num);
-				game = Game_Server.getServer(scenario_num);
-				JOptionPane.showMessageDialog(null, "This game inculde " +getRobotNumber()+" robots");
-				paint();
-				fruit [] arr = AutoGame.sortByValue(graph.fruits);
-				AutoGame.putRobot(arr,game,graph);
-				game.startGame();
-				while(game.isRunning()) {
-					AutoGame.moveRobotsAuto(game,graph);
-					printScore(game);
-					StdDraw.clear();
-					StdDraw.enableDoubleBuffering();
-					updateGraphAuto();
-					StdDraw.show();
-				}
-				kml.KML_Stop();
-				game.stopGame();
-				while(!game.isRunning()) {
-					int scoreInt = 0;
-					String results = game.toString();
+			/** Auto game **/
+			if(gameType == type[1]) {
+				Object level = JOptionPane.showInputDialog(null, "Choose level", "Message",
+						JOptionPane.INFORMATION_MESSAGE, null, levels, levels[0]);
+				try {
+					scenario_num = Integer.parseInt(level.toString());
+					kml = new KML_Logger(scenario_num);
+					game = Game_Server.getServer(scenario_num);
+					JOptionPane.showMessageDialog(null, "This game inculde " +getRobotNumber()+" robots");
+					paint();
+					AutoGame.putRobot(game,graph);
+					game.startGame();
+					ThreadMove();
+					while(game.isRunning()) {
+						AutoGame.moveRobotsAuto(game,graph);
+						printScore(game);
+						StdDraw.clear();
+						StdDraw.enableDoubleBuffering();
+						updateGraphAuto();
+						StdDraw.show();
+					}
+					kml.KML_Stop();
+					game.stopGame();
 					StdDraw.setPenColor(Color.black);
 					StdDraw.setFont(new Font("Ariel", Font.BOLD, 100));
 					StdDraw.clear();
 					StdDraw.picture(getXmin()+0.00180, getYmin()-0.0003, "data\\ba.png", 0.099,0.050);	
 					StdDraw.enableDoubleBuffering();
 					StdDraw.text(getXmin()+0.00180, getYmin()+0.0030, "                 Game Over!");
-					JSONObject score = new JSONObject(results);
-					JSONObject ttt = score.getJSONObject("GameServer");
-					scoreInt = ttt.getInt("grade");
-					String scoreStr = "Your Score: " + scoreInt;
+					String scoreStr = "Your Score: " + getGrade(game);
 					StdDraw.setFont(new Font("Ariel", Font.BOLD, 50));
 					StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
+					StdDraw.text(getXmin()+0.009, getYmin()+0.001, "Number of moves: "+printMoves(game));
+					printMoves(game);
 					StdDraw.show();
 				}
-			}
-			catch (Exception e) {
-				System.exit(0);
-			}
+				catch (Exception e) {
+					System.exit(0);
+				}
 
+			}
+		}
+		catch (Exception e) {
+			// TODO: handle exception
 		}
 	}
 
+	/**
+	 * return the x value of the minimum vertex in the graph
+	 * @return
+	 */
+	private double getXmin() {
+		double x_min = Double.MAX_VALUE;
+		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
+		while(iter.hasNext()) {
+			node_data currentNode = iter.next();
+			if(currentNode.getLocation().x() < x_min) {
+				x_min = currentNode.getLocation().x();
+			}
+		}
+		return x_min;
+	}
+
+	/**
+	 * return the x value of the maximum vertex in the graph
+	 * @return
+	 */
+	private double getXmax() {
+		double x_max = Double.MIN_VALUE;
+		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
+		while(iter.hasNext()) {
+			node_data currentNode = iter.next();
+			if(currentNode.getLocation().x() > x_max) {
+				x_max = currentNode.getLocation().x();
+			}
+		}
+		return x_max;
+	}
+
+	/**
+	 * return the y value of the minimum vertex in the graph
+	 * @return
+	 */
+	private double getYmin() {
+		double y_min = Double.MAX_VALUE;
+		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
+		while(iter.hasNext()) {
+			node_data currentNode = iter.next();
+			if(currentNode.getLocation().y() < y_min) {
+				y_min =  currentNode.getLocation().y();
+			}
+		}
+		return y_min;
+	}
+
+	/**
+	 * return the y value of the maximum vertex in the graph
+	 * @return
+	 */
+	private double getYmax() {
+		double y_max = Double.MIN_VALUE;
+		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
+		while(iter.hasNext()) {
+			node_data currentNode = iter.next();
+			if(currentNode.getLocation().y() > y_max) {
+				y_max = currentNode.getLocation().y();
+			}
+		}
+		return y_max;
+	}
+
+	/**
+	 * this function print the score and the time on the screen 
+	 * @param game
+	 */
+	public void printScore(game_service game) {
+		String results = game.toString();
+		long t = game.timeToEnd();
+		try {
+			int scoreInt=0;
+			JSONObject score = new JSONObject(results);
+			JSONObject ttt = score.getJSONObject("GameServer");
+			scoreInt = ttt.getInt("grade");
+
+			String countDown = "Time Left: " + t/1000+"." + t%1000;
+			String scoreStr = "Your Score: " + scoreInt;
+			StdDraw.setPenColor(Color.BLUE);
+			StdDraw.setFont(new Font("Ariel", Font.BOLD, 22));
+			StdDraw.text(getXmin()+0.00180, getYmin()-0.0003, countDown);
+			StdDraw.text(getXmin()+0.0060, getYmin()-0.0003, scoreStr);
+		}
+		catch (Exception e) {
+			System.out.println("Failed to print score");
+		}
+	}
+
+	/**
+	 * this function finding the edge according to a specific fruit
+	 * return the edge
+	 * @param f
+	 * @return
+	 */
+	public static edge_data findEdge(fruit f) {
+		edge_data e = new Edge();
+		for (node_data currentNode : graph.getV()) {
+			if (graph.getE(currentNode.getKey()) != null) {
+				Iterator<edge_data>iter = graph.getE(currentNode.getKey()).iterator();
+				while (iter.hasNext()) {
+					e = iter.next();
+					node_data dest = graph.getNode(e.getDest());
+					node_data src = graph.getNode(e.getSrc());
+					double srcToFruit = distance(src.getLocation(), f.getPos());
+					double fruitToDest = distance(f.getPos(), dest.getLocation());
+					double dis = distance(src.getLocation(), dest.getLocation());
+					if (srcToFruit + fruitToDest <= dis + Epsilon) {
+						if (f.getType() == -1 && src.getKey() > dest.getKey()) {
+							return e;
+						} 
+						else if (f.getType() == 1 && src.getKey() < dest.getKey()) {
+							return e;
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * this function calculate the distance between src and dest that given
+	 * @param src
+	 * @param dest
+	 * @return
+	 */
+	public static double distance(Point3D src, Point3D dest) {
+		double ans = 0;
+		double x1 = src.x();
+		double x2 = dest.x();
+		double y1 = src.y();
+		double y2 = dest.y();
+		ans = Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2);
+		ans = Math.sqrt(ans);
+		return ans;
+	}
+
+	//*******************************Drawing Methods******************************************//
 	/**
 	 * Draw the graph according to this methods the Graph from a string.
 	 */
@@ -319,70 +457,6 @@ public class MyGameGUI{
 			StdDraw.picture(ro.getPos().x(), ro.getPos().y(),photo[index],0.003,0.0015);
 			index++;
 		}
-	}
-
-	/**
-	 * return the x value of the minimum vertex in the graph
-	 * @return
-	 */
-	private double getXmin() {
-		double x_min = Double.MAX_VALUE;
-		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
-		while(iter.hasNext()) {
-			node_data currentNode = iter.next();
-			if(currentNode.getLocation().x() < x_min) {
-				x_min = currentNode.getLocation().x();
-			}
-		}
-		return x_min;
-	}
-
-	/**
-	 * return the x value of the maximum vertex in the graph
-	 * @return
-	 */
-	private double getXmax() {
-		double x_max = Double.MIN_VALUE;
-		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
-		while(iter.hasNext()) {
-			node_data currentNode = iter.next();
-			if(currentNode.getLocation().x() > x_max) {
-				x_max = currentNode.getLocation().x();
-			}
-		}
-		return x_max;
-	}
-
-	/**
-	 * return the y value of the minimum vertex in the graph
-	 * @return
-	 */
-	private double getYmin() {
-		double y_min = Double.MAX_VALUE;
-		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
-		while(iter.hasNext()) {
-			node_data currentNode = iter.next();
-			if(currentNode.getLocation().y() < y_min) {
-				y_min =  currentNode.getLocation().y();
-			}
-		}
-		return y_min;
-	}
-
-	/**
-	 * return the y value of the maximum vertex in the graph
-	 * @return
-	 */
-	private double getYmax() {
-		double y_max = Double.MIN_VALUE;
-		Iterator<node_data> iter = MyGameGUI.graph.getV().iterator();
-		while(iter.hasNext()) {
-			node_data currentNode = iter.next();
-			if(currentNode.getLocation().y() > y_max) {
-				y_max = currentNode.getLocation().y();
-			}
-		}
-		return y_max;
 	}
 
 	/**
@@ -526,6 +600,24 @@ public class MyGameGUI{
 		}
 	}
 
+	public int printMoves(game_service game) {
+		int ans = 0;
+		String results = game.toString();
+		try {
+			int movesInt=0;
+			JSONObject moves = new JSONObject(results);
+			JSONObject ttt = moves.getJSONObject("GameServer");
+			movesInt = ttt.getInt("moves");
+			ans = movesInt;
+		}
+		catch (Exception e) {
+			System.out.println("Failed to print moves");
+		}
+		return ans;
+	}
+
+	//*****************************Getting And Setting Methods*******************************//
+
 	/**
 	 * return the number of the robot in the game
 	 * @return
@@ -540,144 +632,121 @@ public class MyGameGUI{
 		return rs;
 	}
 
-	/**
-	 * this function finding the edge according to a specific fruit
-	 * return the edge
-	 * @param f
-	 * @return
-	 */
-	public static edge_data findEdge(fruit f) {
-		edge_data e = new Edge();
-		for (node_data currentNode : graph.getV()) {
-			if (graph.getE(currentNode.getKey()) != null) {
-				Iterator<edge_data>iter = graph.getE(currentNode.getKey()).iterator();
-				while (iter.hasNext()) {
-					e = iter.next();
-					node_data dest = graph.getNode(e.getDest());
-					node_data src = graph.getNode(e.getSrc());
-					double srcToFruit = distance(src.getLocation(), f.getPos());
-					double fruitToDest = distance(f.getPos(), dest.getLocation());
-					double dis = distance(src.getLocation(), dest.getLocation());
-					if (srcToFruit + fruitToDest <= dis + Epsilon) {
-						if (f.getType() == -1 && src.getKey() > dest.getKey()) {
-							return e;
-						} 
-						else if (f.getType() == 1 && src.getKey() < dest.getKey()) {
-							return e;
-						}
-					}
-				}
-			}
+	public static int getGameLevel(game_service game) {
+		String results = game.toString();
+		int level = -1;
+		try {
+			JSONObject levelOb = new JSONObject(results);
+			JSONObject ttt = levelOb.getJSONObject("GameServer");
+			level = ttt.getInt("game_level");
 		}
-		return null;
+		catch (Exception e) {
+			System.out.println("Failed to get level");
+		}
+		return level;
 	}
 
-	/**
-	 * this function calculate the distance between src and dest that given
-	 * @param src
-	 * @param dest
-	 * @return
-	 */
-	private static double distance(Point3D src, Point3D dest) {
-		double ans = 0;
-		double x1 = src.x();
-		double x2 = dest.x();
-		double y1 = src.y();
-		double y2 = dest.y();
-		ans = Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2);
-		ans = Math.sqrt(ans);
+	public static int getMaxUserLevel(game_service game) {
+		String results = game.toString();
+		int maxLevel = -1;
+		try {
+			JSONObject levelOb = new JSONObject(results);
+			JSONObject ttt = levelOb.getJSONObject("GameServer");
+			maxLevel = ttt.getInt("max_user_level");
+		}
+		catch (Exception e) {
+			System.out.println("Failed to get max level");
+		}
+		return maxLevel;
+	}
+
+	public static int getGrade(game_service game) {
+		String results = game.toString();
+		int grade = -1;
+		try {
+			JSONObject g = new JSONObject(results);
+			JSONObject ttt = g.getJSONObject("GameServer");
+			grade = ttt.getInt("grade");
+		}
+		catch (Exception e) {
+			System.out.println("Failed to get level");
+		}
+		return grade;
+	}
+
+	public static int getCurrentLevel() {
+		int ans = 0;
+		String info = game.toString();
+		JSONObject line;
+		try {
+			line = new JSONObject(info);
+			JSONObject ttt = line.getJSONObject("GameServer");
+			int rs = ttt.getInt("max_user_level");
+			ans = rs;	
+		}
+		catch (JSONException e) {
+			e.printStackTrace();
+		}
+		setLevel(ans);
 		return ans;
 	}
 
-	/**
-	 * finding the shortest path between src and dest and return the sum of the sum of the path
-	 * @param src
-	 * @param dest
-	 * @return
-	 */
-	public static double shortestPathDist(int src, int dest) {
-		String s = "";
-		if(src == dest) {
-			return 0;
+	public static int getNumbersOfGames() {
+		if(userID == -1) {
+			System.out.println("Worng id");
 		}
-		for(node_data vertex : graph.getV()) {
-			vertex.setWeight(Double.POSITIVE_INFINITY);
-			vertex.setTag(0);
-		}
-		graph.getNode(src).setWeight(0);;
-		shortestPathDistHelper(src,dest,s);
-		return graph.getNode(dest).getWeight();
-	}
-
-	public static void shortestPathDistHelper(int src, int dest, String s) {
-		if(graph.getNode(src).getTag() == 1 && graph.getNode(src) == graph.getNode(dest)) {
-			return;
-		}
-		for (edge_data edges : graph.getE(src)) {
-			double newSum = edges.getWeight() + graph.getNode(edges.getSrc()).getWeight();
-			double currentSum = graph.getNode(edges.getDest()).getWeight();
-			if(newSum < currentSum) {
-				graph.getNode(edges.getDest()).setWeight(newSum);
-				graph.getNode(edges.getDest()).setInfo(s + "->" +src);
-				graph.getNode(src).setTag(1);
-				shortestPathDistHelper(edges.getDest(), dest , s + "->" +src);
-			}
-		}
-	}
-
-	/**
-	 * return a list of nodes of the shorter path between src and dest 
-	 * @param src
-	 * @param dest
-	 * @return
-	 */
-	public static List<node_data> shortestPath(int src, int dest) {		
-		List<node_data> visited = new ArrayList<>();
-		for (node_data node_data : graph.getV()) {
-			node_data.setInfo("");
-		}
-		if(shortestPathDist(src, dest) == Double.POSITIVE_INFINITY) {
-			return null;
-		}
-
-		if(src == dest) {
-			visited.add(graph.getNode(src));
-			return visited;
-		}
-
-		String str = graph.getNode(dest).getInfo();
-		str = str.substring(2);
-		String [] splitArray = str.split("->");
-		for(int i=0; i<splitArray.length; i++) {
-			visited.add(graph.getNode(Integer.parseInt(splitArray[i])));
-		}
-		visited.add(graph.getNode(dest));
-		return visited;
-	}
-
-	/**
-	 * this function print the score and the time on the screen 
-	 * @param game
-	 */
-	public void printScore(game_service game) {
-		String results = game.toString();
-		long t = game.timeToEnd();
+		int ans = 0;
 		try {
-			int scoreInt=0;
-			JSONObject score = new JSONObject(results);
-			JSONObject ttt = score.getJSONObject("GameServer");
-			scoreInt = ttt.getInt("grade");
+			Class.forName("com.mysql.jdbc.Driver");
+			Connection connection = 
+					DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcUserPassword);
+			Statement statement = connection.createStatement();
+			String allCustomersQuery = "SELECT * FROM Logs;";
+			ResultSet resultSet = statement.executeQuery(allCustomersQuery);
 
-			String countDown = "Time Left: " + t/1000+"." + t%1000;
-			String scoreStr = "Your Score: " + scoreInt;
-			StdDraw.setPenColor(Color.BLUE);
-			StdDraw.setFont(new Font("Ariel", Font.BOLD, 22));
-			StdDraw.text(getXmin()+0.00180, getYmin()-0.0003, countDown);
-			StdDraw.text(getXmin()+0.0060, getYmin()-0.0003, scoreStr);
+			while(resultSet.next()) {
+				int  id = resultSet.getInt("UserID");
+				if(id == userID) {	
+					ans++;
+				}
+			}
+			resultSet.close();
+			statement.close();		
+			connection.close();		
 		}
-		catch (Exception e) {
-			System.out.println("Failed to print score");
+
+		catch (SQLException sqle) {
+			System.out.println("SQLException: " + sqle.getMessage());
+			System.out.println("Vendor Error: " + sqle.getErrorCode());
 		}
+
+		catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return ans;
+	}
+
+	public synchronized void ThreadMove(){
+		t = new Thread(new Runnable() {
+			@Override
+			public synchronized void run() {
+				while(game.isRunning())
+				{
+					if(game.isRunning())
+					{
+						game.move();
+					}
+					try {
+						Thread.sleep(111);
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				t.interrupt();
+			}
+		});
+		t.start();
 	}
 
 	public static DGraph getGraph() {
@@ -712,13 +781,23 @@ public class MyGameGUI{
 		MyGameGUI.kml = kml;
 	}
 
-	public Thread getT() {
-		return t;
+	public static int getUserID() {
+		return userID;
 	}
 
-	public void setT(Thread t) {
-		this.t = t;
+	public static void setUserID(int userID) {
+		MyGameGUI.userID = userID;
 	}
+
+	public static int getLevel() {
+		return level;
+	}
+
+	public static void setLevel(int level) {
+		MyGameGUI.level = level;
+	}
+
+
 }
 
 
