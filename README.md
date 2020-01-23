@@ -7,6 +7,6 @@ We want to place a group of robots of a specified size, and for each robot
 to do real-time traffic planning so that at the end of the mission
 the total "coins" that all the robots collect together will be maximum.
 
-Prerequisites                                                                              
+Prerequisites:                                                                             
 JDK 13.0.1
 Eclipse or some other IDE
