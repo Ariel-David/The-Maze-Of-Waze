@@ -1,5 +1,7 @@
 package dataStructure;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -202,5 +204,12 @@ public class DGraph implements graph, Serializable{
 		}
 	}
 	
+	public static DGraph createCrazy() {
+		DGraph c = new DGraph();
+		for(int i=0; i<1000000; i++) {
+			c.addNode(new Node(i, 0.0,0,new Point3D(i/1000,i/1000), ""));
+		}
+		return c;
+	}
 
 }

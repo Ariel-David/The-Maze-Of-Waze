@@ -47,7 +47,7 @@ public class MyGameGUI{
 	public static final String jdbcUserPassword="OOP2020student";
 	private static Thread t;
 	private static int maxLevelUser;
-	public static Integer[][] matLevel = new Integer[11][4];
+	public static Integer[][] matLevel = new Integer[12][4];
 	public static int sleep;
 	public static ArrayList<Integer> stage = new ArrayList<>();
 
@@ -68,6 +68,7 @@ public class MyGameGUI{
 		matLevel[8][0] = 19;
 		matLevel[9][0] = 20;
 		matLevel[10][0] = 23;
+		matLevel[11][0] = -31;
 		matLevel[0][3] = 290;
 		matLevel[1][3] = 580;
 		matLevel[2][3] = 580;
@@ -112,7 +113,7 @@ public class MyGameGUI{
 	private void initMyGui(){
 		drawGraph();
 		try {
-			String[] arr = {"0","1","3","5","9","11","13","16","19","20","23"};
+			String[] arr = {"0","1","3","5","9","11","13","16","19","20","23","-31"};
 			scenario_num = 0;
 			Object idOb = JOptionPane.showInputDialog("Please Enter your Id");
 			userID = Integer.parseInt(idOb.toString());				
@@ -197,8 +198,8 @@ public class MyGameGUI{
 					game.startGame();
 					ThreadMove();
 					while(game.isRunning()) {
-						AutoGame.moveRobotsAuto1(game,graph,1);
-						AutoGame.moveRobotsAuto(game,graph,0);
+						//AutoGame.moveRobotsAuto1(game,graph,1);
+						AutoGame.moveRobotsAuto(game,graph);
 						printScore(game);
 						StdDraw.clear();
 						StdDraw.enableDoubleBuffering();
@@ -220,7 +221,7 @@ public class MyGameGUI{
 					StdDraw.text(getXmin()+0.009, getYmin()+0.001, "Number of moves: "+printMoves(game));
 					if(isGood(printMoves(game), scenario_num, getGrade(game))) {
 						StdDraw.picture(getXmin()+0.01, getYmin()+0.002, "data\\pass.png",0.001,0.002);
-						initTable(userID);
+							initTable(userID);
 					}
 					else {
 						StdDraw.picture(getXmin()+0.01, getYmin()+0.002, "data\\\\notPass.png",0.001,0.002);
@@ -228,12 +229,12 @@ public class MyGameGUI{
 					StdDraw.show();
 				}
 				catch (Exception e) {
-					System.err.println("faild");				}
-
+					System.exit(0);
+				}
 			}
 		}
 		catch (Exception e) {
-			// TODO: handle exception
+			System.exit(0);
 		}
 	}
 
@@ -443,7 +444,7 @@ public class MyGameGUI{
 			photo[1] = "data\\monkey1.png";
 			photo[2] = "data\\monkey2.png";
 			kml.Place_Mark("data\\monkey.png",ro.getPos().toString());
-			StdDraw.picture(ro.getPos().x(), ro.getPos().y(),photo[index],0.003,0.0015);
+			StdDraw.picture(ro.getPos().x(), ro.getPos().y(),photo[j%3],0.003,0.0015);
 			index++;
 		}
 	}
@@ -871,7 +872,7 @@ public class MyGameGUI{
 						game.move();
 					}
 					try {
-						Thread.sleep(107);
+						Thread.sleep(100);
 					}
 					catch (Exception e) {
 						e.printStackTrace();
@@ -898,7 +899,7 @@ public class MyGameGUI{
 				Statement statement = connection.createStatement();
 				String allCustomersQuery = "SELECT * FROM Logs where userID="+id;
 				ResultSet resultSet = statement.executeQuery(allCustomersQuery);
-				if(stage.size() != 11) {
+				if(stage.size() != 12) {
 					stage.add(0);
 					stage.add(1);
 					stage.add(3);
@@ -910,6 +911,7 @@ public class MyGameGUI{
 					stage.add(19);
 					stage.add(20);
 					stage.add(23);
+					stage.add(-31);
 				}
 
 				while(resultSet.next()) {
@@ -1002,51 +1004,6 @@ public class MyGameGUI{
 			e.printStackTrace();
 		}
 		MyGameGUI.maxLevelUser = ans;
-	}
-
-	public static void ratingTable() {
-		int length = String.valueOf(userID).length();
-		if(length == 9) {
-			int ans = 0;
-			try {
-				Class.forName("com.mysql.jdbc.Driver");
-				Connection connection = 
-						DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcUserPassword);
-				Statement statement = connection.createStatement();
-				String allCustomersQuery = "SELECT * FROM Logs order by UserId,levelID";
-				ResultSet resultSet = statement.executeQuery(allCustomersQuery);
-				int ind = 0;
-				while(resultSet.next()) {
-					System.out.println(ind+") Id: " + resultSet.getInt("UserID")+", level: "+resultSet.getInt("levelID")+", score: "+resultSet.getInt("score")+", moves: "+resultSet.getInt("moves")+", time: "+resultSet.getDate("time"));
-					ind++;
-					//					int currentId = resultSet.getInt("UserID");
-					//					int currentLev = resultSet.getInt("levelID");
-					//					int currentMoves = resultSet.getInt("moves");;
-					//					int currentScore = resultSet.getInt("score");;
-
-					//					if(currentLev == level ) {
-					//						if(isGood(currentMoves, level, currentScore)) {
-					//							int temp = currentScore;
-					//							if(ans < temp ) {
-					//								ans = temp;
-					//							}
-					//						}
-					//					}
-				}
-				resultSet.close();
-				statement.close();		
-				connection.close();		
-			}
-
-			catch (SQLException sqle) {
-				System.out.println("SQLException: " + sqle.getMessage());
-				System.out.println("Vendor Error: " + sqle.getErrorCode());
-			}
-
-			catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			}
-		}
 	}
 }
 

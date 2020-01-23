@@ -515,7 +515,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	public static final String jdbcUrl="jdbc:mysql://db-mysql-ams3-67328-do-user-4468260-0.db.ondigitalocean.com:25060/oop?useUnicode=yes&characterEncoding=UTF-8&useSSL=false";
 	public static final String jdbcUser="student";
 	public static final String jdbcUserPassword="OOP2020student";
-	public static Integer[][] rank = new Integer[11][2];
+	public static Integer[][] rank = new Integer[12][2];
 
 	public static void setGui(Graph_GUI g) {
 		graphGui = g;			
@@ -1753,6 +1753,8 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 			rank[8][0] = 19;
 			rank[9][0] = 20;
 			rank[10][0] = 23;
+			rank[11][0] = -31;
+
 
 			if(MyGameGUI.getUserID() == -1) {
 				JOptionPane.showMessageDialog(null,"Please enter your id first!");
