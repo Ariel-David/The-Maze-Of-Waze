@@ -1730,14 +1730,16 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 			break;
 
 		case "Your best scores":
-			MyGameGUI.initTable(MyGameGUI.userID);
+			MyGameGUI.initTable(MyGameGUI.getUserID());
 			if(MyGameGUI.getUserID() == -1) {
 				JOptionPane.showMessageDialog(null,"Please enter your id first!");
 			}
-			Object[][] rows = MyGameGUI.matLevel;
+			Object[][] rows = MyGameGUI.getMatLevel();
 			Object[] col = 
 				{"Stage","Best Score","Moves"};
 			JTable table = new JTable(rows,col);
+			table.setRowHeight(36);
+			table.setFont(new Font("Omer", Font.BOLD, 20));
 			JOptionPane.showMessageDialog(null, new JScrollPane(table));
 			break;
 
@@ -1762,29 +1764,27 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 			int amount;
 			try {
 				Class.forName("com.mysql.jdbc.Driver");
-				MyGameGUI.initTable(MyGameGUI.userID);
-				//System.out.println(Arrays.deepToString(MyGameGUI.matLevel));
+				MyGameGUI.initTable(MyGameGUI.getUserID());
 				Connection connection = 
 						(Connection) DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcUserPassword);
 				Statement statement = (Statement) connection.createStatement();
 				String sql = null;
 				ResultSet resultSet = null;
-				for(Integer in : MyGameGUI.stage) {
-					sql = "SELECT UserID,MAX(score) FROM Logs WHERE UserID<>0 AND UserID<>999 AND UserID<>"+MyGameGUI.userID+
-							" AND moves<="+MyGameGUI.matLevel[MyGameGUI.stage.indexOf(in)][3]+" AND score>"+MyGameGUI.matLevel[MyGameGUI.stage.indexOf(in)][1]+" AND LevelID="+MyGameGUI.stage.indexOf(in)+" Group by UserID;";
+				for(Integer in : MyGameGUI.getStage()) {
+					sql = "SELECT UserID,MAX(score) FROM Logs WHERE UserID<>0 AND UserID<>999 AND UserID<>"+MyGameGUI.getUserID()+
+							" AND moves<="+MyGameGUI.getMatLevel()[MyGameGUI.getStage().indexOf(in)][3]+" AND score>"+MyGameGUI.getMatLevel()[MyGameGUI.getStage().indexOf(in)][1]+" AND LevelID="+MyGameGUI.getStage().indexOf(in)+" Group by UserID;";
 					resultSet= statement.executeQuery(sql);
 					amount = 1;
 					while(resultSet.next()){
 						amount++;
 					}
-					rank[MyGameGUI.stage.indexOf(in)][1] = amount;
+					rank[MyGameGUI.getStage().indexOf(in)][1] = amount;
 				}
 				Object[] rankCol =  {"Stage","Your Rank"};
 				JTable rankTab = new JTable(rank,rankCol);
 				rankTab.setRowHeight(36);
 				rankTab.setFont(new Font("Omer", Font.BOLD, 20));
 				JOptionPane.showMessageDialog(null, new JScrollPane(rankTab));
-
 				resultSet.close();
 				statement.close();		
 				connection.close();	

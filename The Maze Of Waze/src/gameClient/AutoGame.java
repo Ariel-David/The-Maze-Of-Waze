@@ -5,6 +5,7 @@ import java.util.List;
 import org.json.JSONException;
 import Server.game_service;
 import dataStructure.DGraph;
+import dataStructure.graph;
 import elements.Edge;
 import elements.Fruit_Comperator;
 import elements.Node;
@@ -27,7 +28,7 @@ public class AutoGame {
 	 */
 	public static void putRobot(game_service game,DGraph graph) {
 		try {
-			graph.fruits.sort(c);
+			//graph.fruits.sort(c);
 			edge_data e = new Edge();
 			node_data n = new Node();
 			int num = MyGameGUI.getRobotNumber();
@@ -52,7 +53,7 @@ public class AutoGame {
 	 * @param graph
 	 */
 	public static void moveRobotsAuto(game_service game,DGraph graph) {
-		//graph.fruits.sort(c);
+		graph.fruits.sort(c);
 		fruit f = new fruit();
 		for(int i=0; i<graph.robots.size(); i++) {
 			if(graph.robots.get(i).getDest() == -1) {
@@ -75,20 +76,27 @@ public class AutoGame {
 					}
 				}
 				dest = path.get(0).getKey();
-				//				double disFromFruit = MyGameGUI.distance(graph.robots.get(i).getPos(), f.pos);
-				//					if(disFromFruit < 0.002) {
-				//						MyGameGUI.sleep = 100;
-				//					}
-				//					else {
-				//						MyGameGUI.sleep = 100;
-				//					}
-				//System.out.println(MyGameGUI.sleep);
+				//			double disFromFruit = MyGameGUI.distance(graph.robots.get(i).getPos(), f.pos);
+				//			if(disFromFruit < 0.006) {
+				//				MyGameGUI.sleep = 40;
+				//			}
+				//			else {
+				//				MyGameGUI.sleep = 70;
+				//			}
 				game.chooseNextEdge(graph.robots.get(i).getId(),dest);
 			}
 		}
 	}
 
 	public static void moveRobotsAuto1(game_service game,DGraph graph,int index) {
+		List<fruit> lis;
+		List<fruit> lisTemp = rightZone(graph.fruits);
+		if(lisTemp.isEmpty()) {
+			lis = graph.fruits;
+		}
+		else {
+			lis = rightZone(graph.fruits);	
+		}
 		if(graph.robots.get(index).getDest() == -1) {
 			List<node_data> path = new ArrayList<node_data>();
 			fruit f = new fruit();
@@ -96,8 +104,8 @@ public class AutoGame {
 			int src = graph.robots.get(index).getSrc();
 			edge_data e = new Edge();
 			double wayCost = Double.MAX_VALUE;
-		//	for(int j=graph.fruits.size()-1; j>0; j--) {
-				f = graph.fruits.get(0);
+			for(int j=0; j<lis.size(); j++) {
+				f = lis.get(j);
 				e = MyGameGUI.findEdge(f);
 				double temp = shortestPathDist(game,graph,src, e.getSrc());
 				if(temp < wayCost) {
@@ -106,12 +114,59 @@ public class AutoGame {
 					path = shortestPath(game,graph,src, dest);
 					path.add(graph.getNode(e.getDest()));
 					path.remove(0);
-				//	graph.fruits.remove(f);
-				//}
+					//	graph.fruits.remove(f);
+				}
 			}
 			dest = path.get(0).getKey();
+			double disFromFruit = MyGameGUI.distance(graph.robots.get(index).getPos(), f.pos);
+			if(disFromFruit < 0.006) {
+				MyGameGUI.setSleep(40);
+			}
+			else {
+				MyGameGUI.setSleep(70);
+			}
 			game.chooseNextEdge(graph.robots.get(index).getId(),dest);
+		}
+	}
 
+	public static void moveRobotsAuto2(game_service game,DGraph graph,int index) {
+		List<fruit> lis;
+		List<fruit> lisTemp = leftZone(graph.fruits);
+		if(lisTemp.isEmpty()) {
+			lis = graph.fruits;
+		}
+		else {
+			lis = leftZone(graph.fruits);	
+		}
+		if(graph.robots.get(index).getDest() == -1) {
+			List<node_data> path = new ArrayList<node_data>();
+			fruit f = new fruit();
+			int dest = 0;
+			int src = graph.robots.get(index).getSrc();
+			edge_data e = new Edge();
+			double wayCost = Double.MAX_VALUE;
+			for(int j=0; j<lis.size(); j++) {
+				f = lis.get(j);
+				e = MyGameGUI.findEdge(f);
+				double temp = shortestPathDist(game,graph,src, e.getSrc());
+				if(temp < wayCost) {
+					wayCost = temp;
+					dest = e.getSrc();
+					path = shortestPath(game,graph,src, dest);
+					path.add(graph.getNode(e.getDest()));
+					path.remove(0);
+					//	graph.fruits.remove(f);
+				}
+			}
+			dest = path.get(0).getKey();
+			double disFromFruit = MyGameGUI.distance(graph.robots.get(index).getPos(), f.pos);
+			if(disFromFruit < 0.006) {
+				MyGameGUI.setSleep(40);
+			}
+			else {
+				MyGameGUI.setSleep(70);
+			}
+			game.chooseNextEdge(graph.robots.get(index).getId(),dest);
 		}
 	}
 
@@ -119,7 +174,7 @@ public class AutoGame {
 	private static List<fruit> leftZone(ArrayList<fruit> list){
 		ArrayList<fruit> left = new ArrayList<fruit>();
 		for(fruit f: list) {
-			if(f.getPos().x()<35.200160479418884) 
+			if(f.getPos().x()<MyGameGUI.getGraph().getNode(7).getLocation().x()) 
 				left.add(f);	
 
 		}
@@ -129,7 +184,7 @@ public class AutoGame {
 	private static List<fruit> rightZone(ArrayList<fruit> list){
 		ArrayList<fruit> right = new ArrayList<fruit>();
 		for(fruit f: list) {
-			if(f.getPos().x()>=35.200160479418884) 
+			if(f.getPos().x()>=MyGameGUI.getGraph().getNode(7).getLocation().x()) 
 				right.add(f);
 
 		}

@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
 
+import Server.game_service;
+
 /**
  * this class create 24 kml files that can be loaded to google earth and view the game
  * in a specific level
@@ -11,7 +13,7 @@ import java.time.LocalDateTime;
  */
 
 
-class KML_Logger {
+public class KML_Logger {
 
     private int level;
     private StringBuffer str;
@@ -19,11 +21,11 @@ class KML_Logger {
     /**
      * simple constructor
      * @param level
+     * @param game 
      */
-    KML_Logger(int level) {
+    public KML_Logger(int level, game_service game) {
         this.level = level;
         str = new StringBuffer();
-        //KML_Play();
         KML_Start();
     }
     
@@ -120,7 +122,7 @@ class KML_Logger {
     }
 
     
-    void KML_Stop(){
+    public void KML_Stop(){
         str.append("  \r\n</Document>\r\n" +
                 "</kml>");
         SaveFile();

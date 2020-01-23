@@ -7,8 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 
 import javax.swing.JOptionPane;
@@ -16,9 +14,6 @@ import javax.swing.JOptionPane;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.sun.jdi.event.ExceptionEvent;
-
 import Server.Game_Server;
 import Server.game_service;
 
@@ -38,18 +33,19 @@ import utils.StdDraw;
 public class MyGameGUI{
 	private static DGraph graph;
 	private static game_service game;
-	static double Epsilon = 0.000001;
+	private static double Epsilon = 0.000001;
 	private static KML_Logger kml;
 	private static int scenario_num;
-	public static int userID = -1;
-	public static final String jdbcUrl="jdbc:mysql://db-mysql-ams3-67328-do-user-4468260-0.db.ondigitalocean.com:25060/oop?useUnicode=yes&characterEncoding=UTF-8&useSSL=false";
-	public static final String jdbcUser="student";
-	public static final String jdbcUserPassword="OOP2020student";
+	private static int userID = -1;
+	private static final String jdbcUrl="jdbc:mysql://db-mysql-ams3-67328-do-user-4468260-0.db.ondigitalocean.com:25060/oop?useUnicode=yes&characterEncoding=UTF-8&useSSL=false";
+	private static final String jdbcUser="student";
+	private static final String jdbcUserPassword="OOP2020student";
 	private static Thread t;
 	private static int maxLevelUser;
-	public static Integer[][] matLevel = new Integer[12][4];
-	public static int sleep;
-	public static ArrayList<Integer> stage = new ArrayList<>();
+	private static Integer[][] matLevel = new Integer[12][4];
+	private static int sleep;
+	private static ArrayList<Integer> stage = new ArrayList<>();
+
 
 	public static void main(String[] args) {
 		for(int i=0; i<matLevel.length; i++) {
@@ -57,6 +53,7 @@ public class MyGameGUI{
 				matLevel[i][j] = 0;
 			}
 		}
+		
 		matLevel[0][0] = 0;
 		matLevel[1][0] = 1;
 		matLevel[2][0] = 3;
@@ -171,11 +168,11 @@ public class MyGameGUI{
 					StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
 					StdDraw.text(getXmin()+0.009, getYmin()+0.001, "Number of moves: "+printMoves(game));
 					if(isGood(printMoves(game), scenario_num, getGrade(game))) {
-						StdDraw.picture(getXmin()+0.01, getYmin()+0.002, "data\\pass.png",0.001,0.002);
+						StdDraw.picture(getXmin()+0.015, getYmin()+0.002, "data\\pass.png",0.002,0.001);
 						initTable(userID);
 					}
 					else {
-						StdDraw.picture(getXmin()+0.01, getYmin()+0.002, "data\\\\notPass.png",0.001,0.002);
+						StdDraw.picture(getXmin()+0.015, getYmin()+0.002, "data\\\\notPass.png",0.002,0.001);
 					}
 					StdDraw.show();
 				}
@@ -190,7 +187,7 @@ public class MyGameGUI{
 						JOptionPane.INFORMATION_MESSAGE, null, arr, arr[0]);
 				try {
 					scenario_num = Integer.parseInt(level.toString());
-					kml = new KML_Logger(scenario_num);
+					kml = new KML_Logger(scenario_num,game);
 					game = Game_Server.getServer(scenario_num);
 					JOptionPane.showMessageDialog(null, "This game inculde " +getRobotNumber()+" robots");
 					paint();
@@ -199,7 +196,8 @@ public class MyGameGUI{
 					ThreadMove();
 					while(game.isRunning()) {
 						//AutoGame.moveRobotsAuto1(game,graph,1);
-						AutoGame.moveRobotsAuto(game,graph);
+					//	AutoGame.moveRobotsAuto2(game,graph,0);
+						AutoGame.moveRobotsAuto(game, graph);
 						printScore(game);
 						StdDraw.clear();
 						StdDraw.enableDoubleBuffering();
@@ -220,11 +218,11 @@ public class MyGameGUI{
 					StdDraw.text(getXmin()+0.007, getYmin(), scoreStr);
 					StdDraw.text(getXmin()+0.009, getYmin()+0.001, "Number of moves: "+printMoves(game));
 					if(isGood(printMoves(game), scenario_num, getGrade(game))) {
-						StdDraw.picture(getXmin()+0.01, getYmin()+0.002, "data\\pass.png",0.001,0.002);
+						StdDraw.picture(getXmin()+0.015, getYmin()+0.002, "data\\pass.png",0.002,0.001);
 							initTable(userID);
 					}
 					else {
-						StdDraw.picture(getXmin()+0.01, getYmin()+0.002, "data\\\\notPass.png",0.001,0.002);
+						StdDraw.picture(getXmin()+0.015, getYmin()+0.002, "data\\\\notPass.png",0.002,0.001);
 					}
 					StdDraw.show();
 				}
@@ -899,19 +897,19 @@ public class MyGameGUI{
 				Statement statement = connection.createStatement();
 				String allCustomersQuery = "SELECT * FROM Logs where userID="+id;
 				ResultSet resultSet = statement.executeQuery(allCustomersQuery);
-				if(stage.size() != 12) {
-					stage.add(0);
-					stage.add(1);
-					stage.add(3);
-					stage.add(5);
-					stage.add(9);
-					stage.add(11);
-					stage.add(13);
-					stage.add(16);
-					stage.add(19);
-					stage.add(20);
-					stage.add(23);
-					stage.add(-31);
+				if(getStage().size() != 12) {
+					getStage().add(0);
+					getStage().add(1);
+					getStage().add(3);
+					getStage().add(5);
+					getStage().add(9);
+					getStage().add(11);
+					getStage().add(13);
+					getStage().add(16);
+					getStage().add(19);
+					getStage().add(20);
+					getStage().add(23);
+					getStage().add(-31);
 				}
 
 				while(resultSet.next()) {
@@ -1005,5 +1003,37 @@ public class MyGameGUI{
 		}
 		MyGameGUI.maxLevelUser = ans;
 	}
+	public static int getScenario_num() {
+		return scenario_num;
+	}
+
+	public static void setScenario_num(int scenario_num) {
+		MyGameGUI.scenario_num = scenario_num;
+	}
+
+	public static Integer[][] getMatLevel() {
+		return matLevel;
+	}
+
+	public static void setMatLevel(Integer[][] matLevel) {
+		MyGameGUI.matLevel = matLevel;
+	}
+
+	public static int getSleep() {
+		return sleep;
+	}
+
+	public static void setSleep(int sleep) {
+		MyGameGUI.sleep = sleep;
+	}
+
+	public static ArrayList<Integer> getStage() {
+		return stage;
+	}
+
+	public static void setStage(ArrayList<Integer> stage) {
+		MyGameGUI.stage = stage;
+	}
+	
 }
 

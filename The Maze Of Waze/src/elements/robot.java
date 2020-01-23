@@ -35,6 +35,14 @@ public class robot {
 		this.dest = -1;
 	}
 
+	public robot() {
+		this.pos = null;
+		this.id = 0;
+		this.src = 0;
+		this.value = 0;
+		this.dest = -1;
+	}
+
 	public int getSrc() {
 		return src;
 	}
