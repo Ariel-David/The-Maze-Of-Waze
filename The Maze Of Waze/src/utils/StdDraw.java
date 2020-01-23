@@ -64,7 +64,12 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
@@ -81,7 +86,12 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.KeyStroke;
+
+import com.mysql.jdbc.Connection;
+import com.mysql.jdbc.Statement;
 
 import Server.Game_Server;
 import Server.game_service;
@@ -502,6 +512,10 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 	public static MyGameGUI mygraphGui = new MyGameGUI();
 	public static Point3D pointOfMouse;
 	static game_service game;
+	public static final String jdbcUrl="jdbc:mysql://db-mysql-ams3-67328-do-user-4468260-0.db.ondigitalocean.com:25060/oop?useUnicode=yes&characterEncoding=UTF-8&useSSL=false";
+	public static final String jdbcUser="student";
+	public static final String jdbcUserPassword="OOP2020student";
+	public static Integer[][] rank = new Integer[11][2];
 
 	public static void setGui(Graph_GUI g) {
 		graphGui = g;			
@@ -752,7 +766,7 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 		JMenuItem menuItem1 = new JMenuItem("Amount of games played");
 		JMenuItem menuItem3 = new JMenuItem("Your current stage");
 		JMenuItem menuItem4 = new JMenuItem("Your best scores");
-		JMenuItem menuItem2 = new JMenuItem("Your position relative to others");
+		JMenuItem menuItem2 = new JMenuItem("Your rank for each level");
 		menuItem1.addActionListener(std);
 		menuItem2.addActionListener(std);
 		menuItem3.addActionListener(std);
@@ -1711,16 +1725,75 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 
 		case "Your current stage":
 			JOptionPane.showMessageDialog(null,"Your current stage is: "
-					+ MyGameGUI.getCurrentLevel(),"Messege",1);
-			
+					+ MyGameGUI.getMaxLevelUser(),"Messege",1);
+
 			break;
 
 		case "Your best scores":
+			MyGameGUI.initTable(MyGameGUI.userID);
+			if(MyGameGUI.getUserID() == -1) {
+				JOptionPane.showMessageDialog(null,"Please enter your id first!");
+			}
+			Object[][] rows = MyGameGUI.matLevel;
+			Object[] col = 
+				{"Stage","Best Score","Moves"};
+			JTable table = new JTable(rows,col);
+			JOptionPane.showMessageDialog(null, new JScrollPane(table));
 			break;
 
-		case "Your position relative to others":
+		case "Your rank for each level":
+			rank[0][0] = 0;
+			rank[1][0] = 1;
+			rank[2][0] = 3;
+			rank[3][0] = 5;
+			rank[4][0] = 9;
+			rank[5][0] = 11;
+			rank[6][0] = 13;
+			rank[7][0] = 16;
+			rank[8][0] = 19;
+			rank[9][0] = 20;
+			rank[10][0] = 23;
 
+			if(MyGameGUI.getUserID() == -1) {
+				JOptionPane.showMessageDialog(null,"Please enter your id first!");
+			}
+			int amount;
+			try {
+				Class.forName("com.mysql.jdbc.Driver");
+				MyGameGUI.initTable(MyGameGUI.userID);
+				//System.out.println(Arrays.deepToString(MyGameGUI.matLevel));
+				Connection connection = 
+						(Connection) DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcUserPassword);
+				Statement statement = (Statement) connection.createStatement();
+				String sql = null;
+				ResultSet resultSet = null;
+				for(Integer in : MyGameGUI.stage) {
+					sql = "SELECT UserID,MAX(score) FROM Logs WHERE UserID<>0 AND UserID<>999 AND UserID<>"+MyGameGUI.userID+
+							" AND moves<="+MyGameGUI.matLevel[MyGameGUI.stage.indexOf(in)][3]+" AND score>"+MyGameGUI.matLevel[MyGameGUI.stage.indexOf(in)][1]+" AND LevelID="+MyGameGUI.stage.indexOf(in)+" Group by UserID;";
+					resultSet= statement.executeQuery(sql);
+					amount = 1;
+					while(resultSet.next()){
+						amount++;
+					}
+					rank[MyGameGUI.stage.indexOf(in)][1] = amount;
+				}
+				Object[] rankCol =  {"Stage","Your Rank"};
+				JTable rankTab = new JTable(rank,rankCol);
+				rankTab.setRowHeight(36);
+				rankTab.setFont(new Font("Omer", Font.BOLD, 20));
+				JOptionPane.showMessageDialog(null, new JScrollPane(rankTab));
 
+				resultSet.close();
+				statement.close();		
+				connection.close();	
+			}
+			catch (SQLException sqle) {
+				System.out.println("SQLException: " + sqle.getMessage());
+				System.out.println("Vendor Error: " + sqle.getErrorCode());
+			}
+			catch (ClassNotFoundException ex) {
+				ex.printStackTrace();
+			}
 		}
 	}
 
@@ -1961,8 +2034,6 @@ public final class StdDraw implements ActionListener, MouseListener, MouseMotion
 		StdDraw.setPenColor(StdDraw.WHITE);
 		StdDraw.text(0.8, 0.8, "white text");
 	}
-
-
 
 }
 

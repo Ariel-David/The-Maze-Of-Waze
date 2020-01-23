@@ -2,9 +2,7 @@ package gameClient;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.json.JSONException;
-
 import Server.game_service;
 import dataStructure.DGraph;
 import elements.Edge;
@@ -53,18 +51,18 @@ public class AutoGame {
 	 * @param game
 	 * @param graph
 	 */
-	public static void moveRobotsAuto(game_service game,DGraph graph) {
+	public static void moveRobotsAuto(game_service game,DGraph graph,int index) {
 		graph.fruits.sort(c);
 		fruit f = new fruit();
-		for(int i=0; i<graph.robots.size(); i++) {
-			if(graph.robots.get(i).getDest() == -1) {
+		//for(int i=0; i<graph.robots.size(); i++) {
+			if(graph.robots.get(index).getDest() == -1) {
 				List<node_data> path = new ArrayList<node_data>();
 				int dest = 0;
-				int src = graph.robots.get(i).getSrc();
+				int src = graph.robots.get(index).getSrc();
 				edge_data e = new Edge();
 				double wayCost = Double.MAX_VALUE;
-				for(int j=0; j<graph.fruits.size(); j++) {
-					f = graph.fruits.get(j);
+				//for(int j=0; j<graph.fruits.size(); j++) {
+					f = graph.fruits.get(0);
 					e = MyGameGUI.findEdge(f);
 					double temp = shortestPathDist(game,graph,src, e.getSrc());
 					if(temp < wayCost) {
@@ -73,51 +71,69 @@ public class AutoGame {
 						path = shortestPath(game,graph,src, dest);
 						path.add(graph.getNode(e.getDest()));
 						path.remove(0);
-						//	graph.fruits.remove(f);
+						//graph.fruits.remove(f);
 					}
-				}
-
-			//	double disFromFruit = MyGameGUI.distance(graph.robots.get(i).getPos(), f.pos);
+				//}
 				dest = path.get(0).getKey();
-//				if(disFromFruit < 0.002) {
-//					MyGameGUI.sleep = 35;
-//				}
-//				else {
-//					MyGameGUI.sleep = 119;
-//				}
+				//				double disFromFruit = MyGameGUI.distance(graph.robots.get(i).getPos(), f.pos);
+				//					if(disFromFruit < 0.002) {
+				//						MyGameGUI.sleep = 100;
+				//					}
+				//					else {
+				//						MyGameGUI.sleep = 100;
+				//					}
 				//System.out.println(MyGameGUI.sleep);
-				game.chooseNextEdge(graph.robots.get(i).getId(),dest);
+				game.chooseNextEdge(graph.robots.get(index).getId(),dest);
 			}
+		//}
+	}
+
+	public static void moveRobotsAuto1(game_service game,DGraph graph,int index) {
+		if(graph.robots.get(index).getDest() == -1) {
+			List<node_data> path = new ArrayList<node_data>();
+			fruit f = new fruit();
+			int dest = 0;
+			int src = graph.robots.get(index).getSrc();
+			edge_data e = new Edge();
+			double wayCost = Double.MAX_VALUE;
+		//	for(int j=graph.fruits.size()-1; j>0; j--) {
+				f = graph.fruits.get(1);
+				e = MyGameGUI.findEdge(f);
+				double temp = shortestPathDist(game,graph,src, e.getSrc());
+				if(temp < wayCost) {
+					wayCost = temp;
+					dest = e.getSrc();
+					path = shortestPath(game,graph,src, dest);
+					path.add(graph.getNode(e.getDest()));
+					path.remove(0);
+				//	graph.fruits.remove(f);
+				//}
+			}
+			dest = path.get(0).getKey();
+			game.chooseNextEdge(graph.robots.get(index).getId(),dest);
+
 		}
 	}
 
-	/**
-	 * this function is sorting the fruit list according to values
-	 * this help to put in the start of the game the robot on the vertex that are
-	 * close to fruits that have a big value
-	 * @param list
-	 * @return
-	 */
-	public static fruit[] sortByValue(List<fruit> list) {
-		fruit [] arr = new fruit[list.size()];
-		for (int i=0; i<arr.length; i++) {
-			arr[i] = list.get(i);
+
+	private static List<fruit> leftZone(ArrayList<fruit> list){
+		ArrayList<fruit> left = new ArrayList<fruit>();
+		for(fruit f: list) {
+			if(f.getPos().x()<35.200160479418884) 
+				left.add(f);	
+
 		}
-		bubbleSort(arr);
-		return arr;
+		return left;
 	}
 
-	public static void bubbleSort(fruit arr[]){ 
-		int n = arr.length; 
-		for (int i = 0; i < n-1; i++) { 
-			for (int j = 0; j < n-i-1; j++) {
-				if (arr[j].getValue() > arr[j+1].getValue()) {  
-					fruit temp = arr[j]; 
-					arr[j] = arr[j+1]; 
-					arr[j+1] = temp; 
-				} 
-			}
+	private static List<fruit> rightZone(ArrayList<fruit> list){
+		ArrayList<fruit> right = new ArrayList<fruit>();
+		for(fruit f: list) {
+			if(f.getPos().x()>=35.200160479418884) 
+				right.add(f);
+
 		}
+		return right;
 	}
 
 	/**
@@ -144,6 +160,7 @@ public class AutoGame {
 		if(graph.getNode(src).getTag() == 1 && graph.getNode(src) == graph.getNode(dest)) {
 			return;
 		}
+
 		for (edge_data edges : graph.getE(src)) {
 			double newSum = edges.getWeight() + graph.getNode(edges.getSrc()).getWeight();
 			double currentSum = graph.getNode(edges.getDest()).getWeight();
